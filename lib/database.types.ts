@@ -851,6 +851,7 @@ export type Database = {
           account_id: string
           account_plan_id: string | null
           amount_cents: number
+          contact_id: string | null
           created_at: string
           created_by_user_id: string | null
           currency: string
@@ -858,11 +859,12 @@ export type Database = {
           direction: string
           entry_date: string
           id: string
+          lead_id: string | null
           organization_id: string
           origin: string
           paid_at: string | null
-          reverses_entry_id: string | null
           recurring_entry_id: string | null
+          reverses_entry_id: string | null
           sale_id: string | null
           status: string
           updated_at: string
@@ -871,6 +873,7 @@ export type Database = {
           account_id: string
           account_plan_id?: string | null
           amount_cents: number
+          contact_id?: string | null
           created_at?: string
           created_by_user_id?: string | null
           currency?: string
@@ -878,11 +881,12 @@ export type Database = {
           direction: string
           entry_date?: string
           id?: string
+          lead_id?: string | null
           organization_id: string
           origin?: string
           paid_at?: string | null
-          reverses_entry_id?: string | null
           recurring_entry_id?: string | null
+          reverses_entry_id?: string | null
           sale_id?: string | null
           status?: string
           updated_at?: string
@@ -891,6 +895,7 @@ export type Database = {
           account_id?: string
           account_plan_id?: string | null
           amount_cents?: number
+          contact_id?: string | null
           created_at?: string
           created_by_user_id?: string | null
           currency?: string
@@ -898,11 +903,12 @@ export type Database = {
           direction?: string
           entry_date?: string
           id?: string
+          lead_id?: string | null
           organization_id?: string
           origin?: string
           paid_at?: string | null
-          reverses_entry_id?: string | null
           recurring_entry_id?: string | null
+          reverses_entry_id?: string | null
           sale_id?: string | null
           status?: string
           updated_at?: string
@@ -997,6 +1003,7 @@ export type Database = {
           account_id: string
           account_plan_id: string | null
           amount_cents: number
+          contact_id: string | null
           created_at: string
           created_by_user_id: string | null
           currency: string
@@ -1006,12 +1013,14 @@ export type Database = {
           is_active: boolean
           name: string
           organization_id: string
+          starts_on: string | null
           updated_at: string
         }
         Insert: {
           account_id: string
           account_plan_id?: string | null
           amount_cents: number
+          contact_id?: string | null
           created_at?: string
           created_by_user_id?: string | null
           currency?: string
@@ -1021,12 +1030,14 @@ export type Database = {
           is_active?: boolean
           name: string
           organization_id: string
+          starts_on?: string | null
           updated_at?: string
         }
         Update: {
           account_id?: string
           account_plan_id?: string | null
           amount_cents?: number
+          contact_id?: string | null
           created_at?: string
           created_by_user_id?: string | null
           currency?: string
@@ -1036,6 +1047,7 @@ export type Database = {
           is_active?: boolean
           name?: string
           organization_id?: string
+          starts_on?: string | null
           updated_at?: string
         }
         Relationships: [

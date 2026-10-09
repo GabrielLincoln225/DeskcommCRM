@@ -647,6 +647,11 @@ export const AUDIT_ACTIONS = [
   "financeiro.lancamento_criado",
   "financeiro.lancamento_pago",
   "financeiro.lancamento_removido",
+  // Correção de um lançamento pela aba Financeiro: descrição, categoria e cliente sempre;
+  // valor, data e direção só enquanto pendente (o gatilho barra no pago).
+  "financeiro.lancamento_corrigido",
+  // A organização ligou ou desligou a aba Financeiro no menu (capacidade `financeiro_caixa`).
+  "financeiro.aba_alterada",
   // Módulo opcional de honorários (advocacia, ADR-0002) — contrato criado e parcela marcada
   // como paga. Pagar uma parcela cria um `financial_entries` por baixo (DIRC "integrar"), mas
   // o código aqui é do módulo: quem lê a auditoria do caixo núcleo não precisa saber que a
