@@ -192,7 +192,7 @@ export function Caixa({ mesInicial, mesAtual }: { mesInicial: string; mesAtual: 
                     placeholder={t("Buscar por descrição, categoria, cliente ou valor…")}
                     aria-label={t("Buscar lançamento")}
                     data-testid="busca-no-caixa"
-                    className="w-full bg-transparent py-2 text-sm outline-none"
+                    className="w-full bg-transparent py-2 text-sm outline-hidden"
                   />
                 </label>
                 <select
@@ -287,7 +287,7 @@ export function Caixa({ mesInicial, mesAtual }: { mesInicial: string; mesAtual: 
                               </span>
                             </td>
                             <td className="py-2">
-                              <span className="rounded bg-surface-elevated px-2 py-0.5 text-xs">
+                              <span className="rounded-sm bg-surface-elevated px-2 py-0.5 text-xs">
                                 {nomeDaCategoria(l.account_plan_id)}
                               </span>
                             </td>
@@ -425,7 +425,7 @@ function IconeDeAcao({
       title={rotulo}
       data-testid={testId}
       onClick={onClick}
-      className="ml-1 inline-flex rounded p-1.5 text-text-muted hover:bg-surface-elevated hover:text-text"
+      className="ml-1 inline-flex rounded-md p-1.5 text-text-muted hover:bg-surface-elevated hover:text-text"
     >
       {children}
     </button>
