@@ -393,7 +393,7 @@ function Alternador({
           data-testid={o.testId}
           onClick={() => onMudar(o.valor)}
           className={cn(
-            "rounded px-3 py-1.5 text-sm transition-colors disabled:opacity-60",
+            "rounded-md px-3 py-1.5 text-sm transition-colors disabled:opacity-60",
             valor === o.valor ? "bg-surface font-medium text-text shadow-xs" : "text-text-muted hover:text-text",
           )}
         >
