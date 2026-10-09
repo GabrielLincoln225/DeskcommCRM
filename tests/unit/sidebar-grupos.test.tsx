@@ -72,6 +72,18 @@ describe("Sidebar agrupado", () => {
     expect(titulos).toEqual(["Atendimento", "CRM", "Agente de IA", "Canais", "Análise"]);
   });
 
+  it("a aba Financeiro só aparece para a organização que a ligou, depois de Análise", () => {
+    comoPapel("admin");
+    authRef.activeOrg = { orgId: "org-1", name: "Org", role: "admin", capacidades_ligadas: ["financeiro_caixa"] };
+    render(<Sidebar collapsed={false} />);
+    const titulos = screen
+      .getAllByRole("heading")
+      .map((el) => el.textContent?.trim())
+      .filter(Boolean);
+    expect(titulos).toEqual(["Atendimento", "CRM", "Agente de IA", "Canais", "Análise", "Financeiro"]);
+    expect(screen.getByRole("link", { name: "Caixa" })).toBeTruthy();
+  });
+
   it("leva às Etapas do funil pelo CRM, e não por Configurações", () => {
     comoPapel("admin");
     render(<Sidebar collapsed={false} />);

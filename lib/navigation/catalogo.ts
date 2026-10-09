@@ -17,7 +17,14 @@ import type { CapacidadeDaOrganizacao } from "@/lib/organizacao/capacidades";
  * Doutrina: docs/doctrine/sistema-vivo.md — "por qual porta se chega até mim?"
  */
 
-export type NavGroupId = "atendimento" | "crm" | "ia" | "canais" | "analise" | "organizacao";
+export type NavGroupId =
+  | "atendimento"
+  | "crm"
+  | "ia"
+  | "canais"
+  | "analise"
+  | "financeiro"
+  | "organizacao";
 
 export interface NavGroup {
   id: NavGroupId;
@@ -92,6 +99,10 @@ export const NAV_GROUPS: NavGroup[] = [
   { id: "ia", label: "Agente de IA", hub: { href: "/app/ai", label: "Ver tudo em IA" } },
   { id: "canais", label: "Canais" },
   { id: "analise", label: "Análise", hub: { href: "/app/analise", label: "Ver tudo em Análise" } },
+  // O dinheiro da empresa: Painel e Caixa. Sem hub — são duas telas. O grupo
+  // só aparece para a organização que ligou a aba (capacidade `financeiro_caixa`). Grupo PRÓPRIO, e não Análise, porque o Caixa é onde se LANÇA
+  // todo dia; Análise é onde se consulta de vez em quando.
+  { id: "financeiro", label: "Financeiro" },
   {
     id: "organizacao",
     label: "Organização",
@@ -789,6 +800,40 @@ export const NAV_CATALOG = [
     group: "analise",
     section: "Dinheiro",
     minRole: "viewer",
+  },
+  {
+    // O PAINEL FINANCEIRO: os cartões do mês e os negócios ganhos que ainda não
+    // viraram lançamento. É a primeira porta do grupo porque responde a
+    // pergunta de quem abre: "como está o caixa este mês?".
+    //
+    // `admin`: é o dinheiro da empresa inteira, e a página redireciona quem
+    // está abaixo disso (regra 1 da escolha de `minRole`, logo acima). O caixa
+    // por papel menor continua onde estava — Análise › Faturamento.
+    href: "/app/financeiro",
+    label: "Painel financeiro",
+    description: "Saldo do mês, receitas, despesas, o que falta receber e os ganhos ainda não lançados.",
+    icon: "Wallet",
+    group: "financeiro",
+    minRole: "admin",
+    sidebar: true,
+    // Capacidade que a ORGANIZAÇÃO liga (Configurações › Financeiro), e não
+    // porta de todo mundo: o menu lateral está no teto da dobra a 1280×900
+    // (`tests/unit/interface-por-empresa.test.ts`), e o grupo inteiro custa
+    // três linhas. Desligado, ele não existe no menu, no hub nem no ⌘K.
+    capacidade: "financeiro_caixa",
+  },
+  {
+    // O CAIXA: o extrato do mês com tudo que entra e sai, o lançamento (único
+    // ou mensal), a confirmação do que foi pago, o fluxo mês a mês e as
+    // despesas por categoria. Uso diário, e por isso no menu.
+    href: "/app/financeiro/caixa",
+    label: "Caixa",
+    description: "Livro-caixa do mês: lançar receitas e despesas, confirmar o que foi pago e ver o fluxo.",
+    icon: "CashRegister",
+    group: "financeiro",
+    minRole: "admin",
+    sidebar: true,
+    capacidade: "financeiro_caixa",
   },
   {
     // Módulo opcional (ADR-0002), fonte `modulos_instalados` — a porta só existe
