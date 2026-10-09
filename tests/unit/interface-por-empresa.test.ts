@@ -32,6 +32,7 @@ import {
   type InterfaceSettings,
 } from "@/lib/navigation/interface";
 import { GRUPO_NO_RODAPE, sidebarGroups } from "@/lib/navigation/registry";
+import type { CapacidadeDaOrganizacao } from "@/lib/organizacao/capacidades";
 
 const completa = { preset: "completa" } as const;
 const simplificada = { preset: "simplificada" } as const;
@@ -42,9 +43,18 @@ const hrefs = (settings: unknown, role: "agent" | "admin" = "admin") =>
 /**
  * Os itens do MENU LATERAL — o mesmo recorte que o instrumento de tela mede:
  * só os grupos que aparecem na dobra, sem o grupo do rodapé.
+ *
+ * `capacidades` é o que a ORGANIZAÇÃO ligou para si; o padrão é nenhuma, que é
+ * o estado de toda organização recém-criada e o que o Sidebar recebe dela
+ * (`capacidades_ligadas ?? []`). Sem passar a lista, `permitidos()` não
+ * filtra por capacidade e contaria portas que nenhuma empresa padrão vê.
  */
-const itensNoMenuLateral = (settings: unknown, role: "agent" | "admin" = "admin") =>
-  sidebarGroups(false, role, settings as InterfaceSettings | undefined)
+const itensNoMenuLateral = (
+  settings: unknown,
+  role: "agent" | "admin" = "admin",
+  capacidades: readonly CapacidadeDaOrganizacao[] = [],
+) =>
+  sidebarGroups(false, role, settings as InterfaceSettings | undefined, undefined, capacidades)
     .filter((grupo) => grupo.group.id !== GRUPO_NO_RODAPE)
     .reduce((total, grupo) => total + grupo.items.length, 0);
 
@@ -195,6 +205,21 @@ describe("medição da folga (pergunta de aceite da issue #1341)", () => {
    * A escolha da empresa é interseção, então o menu só ENCOLHE — a mudança não
    * tem como empurrar o instrumento de tela para o vermelho.
    */
+  /**
+   * A aba Financeiro é capacidade que a organização liga (`financeiro_caixa`)
+   * PORQUE o menu está no teto: ligada, o grupo custa duas portas (e o título),
+   * e quem liga escolhe pagar — ou abre espaço ocultando portas em Interface.
+   * Desligada, o caso de cima continua 15: ninguém perde folga sem escolher.
+   */
+  it("a empresa que liga a aba Financeiro paga duas portas; a que não liga, nenhuma", () => {
+    expect(itensNoMenuLateral(INTERFACE_COMPLETA, "admin", ["financeiro_caixa"])).toBe(17);
+    expect(itensNoMenuLateral(INTERFACE_COMPLETA, "admin", [])).toBe(15);
+    // E só admin vê: para o agent a capacidade ligada não acrescenta nada.
+    expect(itensNoMenuLateral(INTERFACE_COMPLETA, "agent", ["financeiro_caixa"])).toBe(
+      itensNoMenuLateral(INTERFACE_COMPLETA, "agent", []),
+    );
+  });
+
   it("configuração COMPLETA (ninguém escolheu): 15 itens, folga 0 — igual a hoje", () => {
     expect(itensNoMenuLateral(combinarInterfaces(completa, completa))).toBe(15);
   });
