@@ -28,6 +28,22 @@ describe("capacidadesLigadas — só o booleano true liga", () => {
   });
 });
 
+describe("a aba Financeiro (financeiro_caixa) — capacidade sem módulo", () => {
+  it("financeiro.aba_no_menu === true liga, sem depender de módulo da instalação", () => {
+    expect(capacidadesLigadas({ financeiro: { aba_no_menu: true } }, [])).toEqual(["financeiro_caixa"]);
+  });
+  it("só o booleano true: false, string e ausente ficam desligados", () => {
+    for (const s of [{ financeiro: { aba_no_menu: false } }, { financeiro: { aba_no_menu: "true" } }, { financeiro: {} }, {}]) {
+      expect(capacidadesLigadas(s, ["propostas"]), JSON.stringify(s)).toEqual([]);
+    }
+  });
+  it("convive com propostas: cada uma pela sua chave", () => {
+    expect(
+      capacidadesLigadas({ proposals: { enabled: true }, financeiro: { aba_no_menu: true } }, ["propostas"]),
+    ).toEqual(["propostas", "financeiro_caixa"]);
+  });
+});
+
 /** Banco falso das duas leituras: a linha da organização e `platform_config`. */
 function dbQueDevolve(
   resultado: { data: unknown; error: unknown } | Error,

@@ -48495,6 +48495,79 @@ create trigger trg_cobranca_trava_exclusao_com_assinatura_viva
   before delete on public.organizations
   for each row execute function public.fn_cobranca_trava_exclusao_com_assinatura_viva();
 
+-- ---- o lançamento ganha cliente e negócio; o molde ganha cliente e início (migration 9001) ----
+-- Corpo e porquê: a migration 9001. Antes da VARREDURA anon, que é o último bloco de propósito.
+alter table public.financial_entries
+  add column if not exists contact_id uuid references public.contacts(id) on delete set null;
+alter table public.financial_entries
+  add column if not exists lead_id uuid references public.crm_leads(id) on delete set null;
+
+create index if not exists financial_entries_contato_idx
+  on public.financial_entries (organization_id, contact_id)
+  where contact_id is not null;
+
+create unique index if not exists financial_entries_lead_unico_idx
+  on public.financial_entries (lead_id)
+  where lead_id is not null;
+
+alter table public.recurring_entries
+  add column if not exists contact_id uuid references public.contacts(id) on delete set null;
+alter table public.recurring_entries
+  add column if not exists starts_on date;
+
+create or replace function public.fn_financeiro_vinculo_da_mesma_org()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if new.contact_id is not null and not exists (
+    select 1 from public.contacts c
+     where c.id = new.contact_id and c.organization_id = new.organization_id
+  ) then
+    raise exception 'vinculo_de_outra_organizacao'
+      using errcode = '23503',
+            hint = 'O contato informado não existe nesta organização.';
+  end if;
+
+  -- `if` ANINHADO e não `and`: `recurring_entries` não tem `lead_id`, e o
+  -- plpgsql resolve `new.lead_id` ao preparar a expressão — num `and` ele
+  -- falharia na tabela que não tem a coluna mesmo com o primeiro termo falso.
+  if tg_table_name = 'financial_entries' then
+    if new.lead_id is not null and not exists (
+      select 1 from public.crm_leads l
+       where l.id = new.lead_id and l.organization_id = new.organization_id
+    ) then
+      raise exception 'vinculo_de_outra_organizacao'
+        using errcode = '23503',
+              hint = 'O negócio informado não existe nesta organização.';
+    end if;
+  end if;
+
+  return new;
+end $$;
+
+-- Gatilho dispara sem checar EXECUTE; ninguém precisa chamá-la direto.
+revoke execute on function public.fn_financeiro_vinculo_da_mesma_org() from public, anon, authenticated;
+grant execute on function public.fn_financeiro_vinculo_da_mesma_org() to service_role;
+
+drop trigger if exists trg_financial_entries_vinculo on public.financial_entries;
+create trigger trg_financial_entries_vinculo
+  before insert or update of contact_id, lead_id, organization_id on public.financial_entries
+  for each row execute function public.fn_financeiro_vinculo_da_mesma_org();
+
+drop trigger if exists trg_recurring_entries_vinculo on public.recurring_entries;
+create trigger trg_recurring_entries_vinculo
+  before insert or update of contact_id, organization_id on public.recurring_entries
+  for each row execute function public.fn_financeiro_vinculo_da_mesma_org();
+
+comment on column public.financial_entries.contact_id is
+  'De quem é o dinheiro (opcional). `on delete set null`: o lançamento sobrevive ao contato.';
+comment on column public.financial_entries.lead_id is
+  'O negócio ganho que originou esta conta a receber. Único: um ganho vira UM lançamento.';
+comment on column public.recurring_entries.starts_on is
+  'Primeira competência válida do molde. Nulo = sem início (o comportamento anterior à 9001).';
+
 -- ---- VARREDURA anon: função nova nasce exposta em quem ATUALIZA (migration 0116) ----
 --
 -- ⚠️ DE PROPÓSITO, NENHUMA FUNÇÃO É CRIADA DEPOIS DESTE BLOCO. Apêndice que cria

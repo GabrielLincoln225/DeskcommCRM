@@ -3373,3 +3373,23 @@ Spec: `tests/e2e/mapas-em-provedores.spec.ts`.
 | J40.6 | O que o Google diz × o endereço anotado em 8 pedidos confirmados (28/09/2026, numa instalação real) | município 8/8, região 8/8, localidade 7/8 (na zona rural virou o povoado), rua 3/5, bairro 1/8, número interpolado → a cidade é o MUNICÍPIO; bairro e número não saem | **MEDIDO em produção** (fora deste repositório); regra em `tests/unit/mapas-pino-com-endereco.test.ts` |
 | J40.7 | O pino com endereço aproximado, aberto na conversa pela equipe | o cartão do pino mostra «Rua, Cidade, Estado (aprox.)», com o texto inteiro no `title` (o cartão corta com …) e o toque abre as COORDENADAS no mapa | **PASS pela tela** — Evidência: `evidence/triagem-16set-l12/mapas-03-pino-na-conversa.png` |
 | J40.8 | A API do canal intermediado não responde a tempo na ingestão do pino (medido 29/09/2026: timeout duas vezes seguidas) | a mensagem entra com o marcador e pede nova busca (`message.location_retry_requested`); 1 min depois, e a cada 2 min até 15, busca de novo e grava tipo `location` + link (+ endereço aproximado com chave); nunca rebaixa um pino que já tem coordenadas; desiste sem virar incidente | **PASS (unit)** — `tests/unit/pino-reintento.test.ts`, `tests/unit/channel-ingest-zernio.test.ts` |
+
+## J44 — O dono controla o caixa pela aba Financeiro `[P1]` (2026-10-09)
+
+Contexto: a agência que pediu a aba mantinha o livro-caixa num sistema à parte
+(entrada/saída, categoria, já recebido × a receber, único × mensal) e queria
+o mesmo dentro do CRM, só para quem administra. A aba usa o caixa que o núcleo
+já tinha (`financial_entries`, `account_plans`, `recurring_entries`). A
+migration 9001 acrescenta o cliente e o negócio ao lançamento e o início ao
+molde mensal. Mapa: `docs/architecture/financeiro-painel-e-caixa.architecture.json`.
+
+| # | Caso | Expectativa | Resultado |
+|---|------|-------------|-----------|
+| J44.1 | Admin abre Financeiro › Painel num mês com movimento | quatro cartões: saldo realizado (recebido − pago), receitas realizadas, custos e despesas, previsão do período (tudo − tudo, com a contagem a confirmar) | **PASS (unit)** em `lib/financeiro/caixa.test.ts`. Pela tela: **NÃO MEDIDO** (sem Docker nesta máquina) |
+| J44.2 | Lançar "Todo mês" com data no mês que vem | o molde nasce com `starts_on` = a data, a 1ª competência fica gravada e ligada a ele, e o cron NÃO gera o mês corrente | **PASS (unit)** em `previstosDoMes`/`moldeValeNaCompetencia`. Cron com `starts_on`: **NÃO MEDIDO** em banco |
+| J44.3 | Os meses seguintes aparecem como Previstos e somem quando o cron grava | a chave `(recurring_entry_id, entry_date)` é a mesma do índice único | **PASS (unit)** |
+| J44.4 | Ganho no funil com valor e sem lançamento aparece no Painel, e "Lançar a receber" o tira de lá | um ganho vira UM lançamento (`financial_entries_lead_unico_idx`) | **PASS (invariante)** em `tests/invariants/financeiro-vinculo-da-mesma-org.test.ts`, escrito e **NÃO RODADO** aqui (sem Docker) |
+| J44.5 | Contato ou negócio de OUTRA organização no lançamento | recusado pelo gatilho, pela sessão e pela service role | igual ao J44.4 |
+| J44.6 | Corrigir um lançamento pago | descrição, categoria e cliente mudam; valor, data e tipo ficam travados na tela e a rota responde 409 | **NÃO MEDIDO** pela tela |
+| J44.0 | Admin liga "Mostrar a aba Financeiro no menu" em Configurações › Financeiro | o grupo Financeiro aparece no menu depois de Análise; desligado (o padrão) o menu continua com 15 portas | **PASS (unit)** em `tests/unit/sidebar-grupos.test.tsx`, `tests/unit/interface-por-empresa.test.ts`, `lib/organizacao/capacidades.test.ts`. Pela tela: **NÃO MEDIDO** |
+| J44.7 | Agent ou manager tenta abrir /app/financeiro | sem porta no menu e redirecionado para /403; a rota responde 403 | **NÃO MEDIDO** pela tela |
