@@ -3422,7 +3422,7 @@ Contexto: a agência que pediu a aba mantinha o livro-caixa num sistema à parte
 (entrada/saída, categoria, já recebido × a receber, único × mensal) e queria
 o mesmo dentro do CRM, só para quem administra. A aba usa o caixa que o núcleo
 já tinha (`financial_entries`, `account_plans`, `recurring_entries`). A
-migration 0624 acrescenta o cliente e o negócio ao lançamento e o início ao
+migration 0626 acrescenta o cliente e o negócio ao lançamento e o início ao
 molde mensal. Mapa: `docs/architecture/financeiro-painel-e-caixa.architecture.json`.
 
 | # | Caso | Expectativa | Resultado |

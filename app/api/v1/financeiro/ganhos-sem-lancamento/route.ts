@@ -6,7 +6,7 @@
  * por conta própria encheria o caixa de dinheiro que talvez nunca venha. A aba
  * Financeiro SUGERE, e quem confirma é a pessoa: esta rota é a lista do que
  * sugerir. Aceitar é um `POST /financeiro/lancamentos` com `lead_id`, e o índice
- * único de `financial_entries.lead_id` (0624) garante que o mesmo ganho não vira
+ * único de `financial_entries.lead_id` (0626) garante que o mesmo ganho não vira
  * dois lançamentos.
  *
  * ⚠️ JANELA DE 60 DIAS, e é o mecanismo que impede a lista de morrer de

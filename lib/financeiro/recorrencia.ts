@@ -24,7 +24,7 @@ export function competenciaDoMes(ano: number, mes: number, diaDoMes: number): st
 }
 
 /**
- * O molde vale nesta competência? Só depois do início (migration 0624).
+ * O molde vale nesta competência? Só depois do início (migration 0626).
  *
  * `startsOn` nulo é o molde de antes da coluna existir: vale desde sempre, que
  * era o comportamento dele. Datas ISO comparam como texto.

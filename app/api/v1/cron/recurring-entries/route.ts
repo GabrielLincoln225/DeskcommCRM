@@ -67,7 +67,7 @@ async function handle(req: NextRequest): Promise<Response> {
     // que ainda não venceram.
     if (competencia > agora.toISOString().slice(0, 10)) continue;
 
-    // Nem antes do início do molde (0624). Quem cadastra hoje a mensalidade que
+    // Nem antes do início do molde (0626). Quem cadastra hoje a mensalidade que
     // começa no mês que vem não deve a competência deste mês. Nulo é o molde de
     // antes da coluna existir, e para ele nada muda.
     if (!moldeValeNaCompetencia(molde.starts_on as string | null, competencia)) continue;

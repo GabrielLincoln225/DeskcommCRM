@@ -1,5 +1,5 @@
 -- manifest: O lançamento do caixa ganha cliente e negócio (`financial_entries.contact_id`/`lead_id`) e o molde recorrente ganha cliente e início (`recurring_entries.contact_id`/`starts_on`), com gatilho que recusa vínculo de outra organização — base da aba Financeiro (Painel + Caixa).
--- 0624 — de quem é o dinheiro, e desde quando a recorrência vale.
+-- 0626 — de quem é o dinheiro, e desde quando a recorrência vale.
 --
 -- ═══ O PROBLEMA ═══
 --
@@ -104,4 +104,4 @@ comment on column public.financial_entries.contact_id is
 comment on column public.financial_entries.lead_id is
   'O negócio ganho que originou esta conta a receber. Único: um ganho vira UM lançamento.';
 comment on column public.recurring_entries.starts_on is
-  'Primeira competência válida do molde. Nulo = sem início (o comportamento anterior à 0624).';
+  'Primeira competência válida do molde. Nulo = sem início (o comportamento anterior à 0626).';

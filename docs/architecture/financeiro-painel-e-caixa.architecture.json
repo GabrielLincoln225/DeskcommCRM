@@ -3,7 +3,7 @@
   "diagram_type": "architecture",
   "meta": {
     "title": "Aba Financeiro — Painel e Caixa",
-    "subtitle": "O livro-caixa sobre financial_entries, com cliente, negócio ganho e recorrência que começa numa data (migration 0624)",
+    "subtitle": "O livro-caixa sobre financial_entries, com cliente, negócio ganho e recorrência que começa numa data (migration 0626)",
     "output": "financeiro-painel-e-caixa.html",
     "quality_profile": "standard"
   },

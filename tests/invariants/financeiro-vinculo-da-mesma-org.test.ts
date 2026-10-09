@@ -3,7 +3,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { lastLine, sql } from "./gov-helpers";
 
 /**
- * O LANÇAMENTO SÓ SE LIGA A CLIENTE E NEGÓCIO DA PRÓPRIA ORGANIZAÇÃO (0624).
+ * O LANÇAMENTO SÓ SE LIGA A CLIENTE E NEGÓCIO DA PRÓPRIA ORGANIZAÇÃO (0626).
  *
  * `financial_entries.contact_id`/`lead_id` e `recurring_entries.contact_id` têm
  * FK — e FK diz que a linha EXISTE, não que ela é DESTE tenant. Sem o gatilho
@@ -158,7 +158,7 @@ describe("um negócio ganho vira UM lançamento", () => {
 });
 
 describe("o molde recorrente tem início", () => {
-  it("`starts_on` existe e nasce nulo — o molde de antes da 0624 vale desde sempre", () => {
+  it("`starts_on` existe e nasce nulo — o molde de antes da 0626 vale desde sempre", () => {
     const out = sql(`
       insert into public.recurring_entries (organization_id, name, account_id, direction, amount_cents, day_of_month)
         values ('${ORG_A}', 'Molde antigo', '${CONTA_A}', 'out', 5900, 8);

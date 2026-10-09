@@ -11,7 +11,7 @@
  * entrada que o relatório conta como venda sem existir comanda nenhuma por trás.
  *
  * ⚠️ "MENSAL" CRIA O MOLDE E A PRIMEIRA LINHA, juntos. O molde (`recurring_entries`)
- * começa na data escolhida (`starts_on`, 0624) e a primeira competência já nasce
+ * começa na data escolhida (`starts_on`, 0626) e a primeira competência já nasce
  * gravada, ligada a ele — o índice único `(recurring_entry_id, entry_date)` impede
  * o cron de gerá-la de novo. Escrever molde é `manager` pela RLS, e a rota cobra
  * o mesmo degrau só quando o pedido é mensal.
@@ -47,7 +47,7 @@ const criarSchema = z.object({
   description: z.string().min(1).max(300),
   entry_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida."),
   status: z.enum(["pending", "paid"]).default("pending"),
-  /** De quem é o dinheiro (0624). A organização é conferida pelo gatilho do banco. */
+  /** De quem é o dinheiro (0626). A organização é conferida pelo gatilho do banco. */
   contact_id: z.string().uuid().nullish(),
   /** O negócio ganho que este lançamento cobra. Único no banco: um ganho, um lançamento. */
   lead_id: z.string().uuid().nullish(),
@@ -174,7 +174,7 @@ export async function POST(req: NextRequest): Promise<Response> {
       return fail("state_conflict", "Este negócio já foi lançado no caixa.", 409, { requestId });
     }
     // 23503 = a conta, a categoria, o contato ou o negócio não existe nesta
-    // organização (a FK ou o gatilho da 0624). Sem a tradução, chegaria como 500
+    // organização (a FK ou o gatilho da 0626). Sem a tradução, chegaria como 500
     // e a pessoa não saberia que basta escolher outro.
     if (error.code === "23503") {
       return fail("validation_failed", "Conta, categoria, contato ou negócio inválido.", 422, { requestId });
