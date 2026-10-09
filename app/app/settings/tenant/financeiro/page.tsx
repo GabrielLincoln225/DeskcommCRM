@@ -6,6 +6,7 @@ import { traduzir } from "@/lib/i18n/dicionario";
 import { moduloLigado } from "@/lib/instalacao/modulos";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+import { AbaFinanceiroNoMenu } from "./_aba-no-menu";
 import { CatalogoFinanceiro } from "./_client";
 
 export const dynamic = "force-dynamic";
@@ -44,6 +45,8 @@ export default async function Page() {
           {t("Onde o dinheiro fica, como o cliente paga e como cada lançamento é classificado.")}
         </p>
       </div>
+      {/* A aba Financeiro (Painel + Caixa) é do admin, e quem a liga também. */}
+      {ROLE_RANK[org.role] >= ROLE_RANK.admin ? <AbaFinanceiroNoMenu /> : null}
       <CatalogoFinanceiro
         podeEditar={podeEditar}
         comissaoDisponivel={await moduloLigado(createAdminClient(), "financeiro")}

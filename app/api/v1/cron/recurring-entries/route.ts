@@ -20,29 +20,16 @@ import type { NextRequest } from "next/server";
 import { ok, fail } from "@/lib/api/wrappers";
 import { audit } from "@/lib/audit";
 import { autorizaCron } from "@/lib/auth/cron-auth";
+import { competenciaDoMes, moldeValeNaCompetencia } from "@/lib/financeiro/recorrencia";
 import { logger } from "@/lib/logger";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
-/**
- * A data da competência deste mês para um molde.
- *
- * ⚠️ ONZE MESES DO ANO NÃO TÊM TODOS OS DIAS. Um molde de dia 31 em fevereiro
- * não pode ser pulado (deixaria de cobrar o aluguel) nem empurrado para março
- * (mudaria a competência): ele cai no último dia do mês.
- *
- * Pura e exportada porque é a regra inteira, e esperar fevereiro para testá-la
- * seria absurdo.
- */
-export function competenciaDoMes(ano: number, mes: number, diaDoMes: number): string {
-  // Dia 0 do mês seguinte é o último dia deste. `Date.UTC` porque a competência
-  // é uma data civil, não um instante: usar o fuso local do servidor faria a
-  // mesma instalação gerar dias diferentes conforme onde ela roda.
-  const ultimoDia = new Date(Date.UTC(ano, mes, 0)).getUTCDate();
-  const dia = Math.min(diaDoMes, ultimoDia);
-  return `${ano}-${String(mes).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
-}
+// A regra da competência mora em `lib/financeiro/recorrencia.ts`: o Caixa usa a
+// mesma para mostrar o que ainda vai vencer. Reexportada aqui porque o teste da
+// regra nasceu ao lado desta rota.
+export { competenciaDoMes };
 
 async function handle(req: NextRequest): Promise<Response> {
   const requestId = randomUUID();
@@ -59,7 +46,7 @@ async function handle(req: NextRequest): Promise<Response> {
   const { data: moldes, error } = await admin
     .from("recurring_entries")
     .select(
-      "id, organization_id, account_id, account_plan_id, direction, amount_cents, currency, name, day_of_month",
+      "id, organization_id, account_id, account_plan_id, contact_id, direction, amount_cents, currency, name, day_of_month, starts_on",
     )
     .eq("is_active", true);
 
@@ -80,10 +67,16 @@ async function handle(req: NextRequest): Promise<Response> {
     // que ainda não venceram.
     if (competencia > agora.toISOString().slice(0, 10)) continue;
 
+    // Nem antes do início do molde (9001). Quem cadastra hoje a mensalidade que
+    // começa no mês que vem não deve a competência deste mês. Nulo é o molde de
+    // antes da coluna existir, e para ele nada muda.
+    if (!moldeValeNaCompetencia(molde.starts_on as string | null, competencia)) continue;
+
     const { error: erroInsert } = await admin.from("financial_entries").insert({
       organization_id: molde.organization_id,
       account_id: molde.account_id,
       account_plan_id: molde.account_plan_id,
+      contact_id: molde.contact_id ?? null,
       direction: molde.direction,
       amount_cents: molde.amount_cents,
       currency: molde.currency,

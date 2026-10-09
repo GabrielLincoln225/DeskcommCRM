@@ -169,4 +169,10 @@ export {
   // erro de compilação na primeira tela que precisasse dos dois.
   ShoppingCart,
   LinkSimple as LinkIcon,
+  // aba Financeiro: Painel, Caixa, entrada/saída no extrato e o lançamento mensal
+  Wallet,
+  CashRegister,
+  ArrowUpRight,
+  ArrowDownRight,
+  Repeat,
 } from "@phosphor-icons/react/dist/ssr";

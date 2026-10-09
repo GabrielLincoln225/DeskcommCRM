@@ -1,0 +1,427 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Aba Financeiro — Painel e Caixa",
+    "subtitle": "O livro-caixa sobre financial_entries, com cliente, negócio ganho e recorrência que começa numa data (migration 9001)",
+    "output": "financeiro-painel-e-caixa.html",
+    "quality_profile": "standard"
+  },
+  "lanes": [
+    {
+      "id": "tela",
+      "label": "Telas (admin)"
+    },
+    {
+      "id": "rota",
+      "label": "Rotas /api/v1/financeiro"
+    },
+    {
+      "id": "regra",
+      "label": "Regra pura"
+    },
+    {
+      "id": "banco",
+      "label": "Banco (RLS + gatilhos)"
+    },
+    {
+      "id": "fora",
+      "label": "Fora do grupo"
+    }
+  ],
+  "mainPath": [
+    "caixa_tela",
+    "rota_caixa",
+    "regra_caixa",
+    "entries"
+  ],
+  "nodes": [
+    {
+      "id": "nav",
+      "lane": "tela",
+      "col": 1,
+      "type": "config",
+      "label": "Menu: grupo Financeiro",
+      "sublabel": "lib/navigation/catalogo.ts · minRole admin"
+    },
+    {
+      "id": "painel",
+      "lane": "tela",
+      "col": 2,
+      "type": "frontend",
+      "label": "/app/financeiro (Painel)",
+      "sublabel": "cartões do mês + ganhos sem lançamento"
+    },
+    {
+      "id": "caixa_tela",
+      "lane": "tela",
+      "col": 3,
+      "type": "frontend",
+      "label": "/app/financeiro/caixa",
+      "sublabel": "extrato, fluxo mensal, despesas por categoria"
+    },
+    {
+      "id": "dialogo",
+      "lane": "tela",
+      "col": 4,
+      "type": "frontend",
+      "label": "DialogoDeLancamento",
+      "sublabel": "novo / corrigir; único ou todo mês; cliente"
+    },
+    {
+      "id": "rota_caixa",
+      "lane": "rota",
+      "col": 2,
+      "type": "api",
+      "label": "GET /financeiro/caixa?mes=",
+      "sublabel": "lê o período INTEIRO em páginas; teto avisa truncado"
+    },
+    {
+      "id": "rota_ganhos",
+      "lane": "rota",
+      "col": 1,
+      "type": "api",
+      "label": "GET /financeiro/ganhos-sem-lancamento",
+      "sublabel": "won + valor + 60 dias − já lançados"
+    },
+    {
+      "id": "rota_lanc",
+      "lane": "rota",
+      "col": 3,
+      "type": "api",
+      "label": "POST /financeiro/lancamentos",
+      "sublabel": "contact_id, lead_id, repetir=mensal"
+    },
+    {
+      "id": "rota_lanc_id",
+      "lane": "rota",
+      "col": 4,
+      "type": "api",
+      "label": "PATCH|DELETE /financeiro/lancamentos/:id",
+      "sublabel": "pagar; corrigir (pago: só descrição/categoria/cliente)"
+    },
+    {
+      "id": "cron",
+      "lane": "rota",
+      "col": 5,
+      "type": "service",
+      "label": "cron recurring-entries",
+      "sublabel": "grava a competência no dia, pendente"
+    },
+    {
+      "id": "regra_caixa",
+      "lane": "regra",
+      "col": 2,
+      "type": "lib",
+      "label": "lib/financeiro/caixa.ts",
+      "sublabel": "resumo, previstos, fluxo, categorias"
+    },
+    {
+      "id": "regra_recorr",
+      "lane": "regra",
+      "col": 4,
+      "type": "lib",
+      "label": "lib/financeiro/recorrencia.ts",
+      "sublabel": "competência + vale desde starts_on — UMA regra"
+    },
+    {
+      "id": "entries",
+      "lane": "banco",
+      "col": 2,
+      "type": "database",
+      "label": "financial_entries",
+      "sublabel": "+ contact_id, lead_id (único)"
+    },
+    {
+      "id": "moldes",
+      "lane": "banco",
+      "col": 4,
+      "type": "database",
+      "label": "recurring_entries",
+      "sublabel": "+ contact_id, starts_on"
+    },
+    {
+      "id": "gatilho",
+      "lane": "banco",
+      "col": 3,
+      "type": "database",
+      "label": "fn_financeiro_vinculo_da_mesma_org",
+      "sublabel": "recusa contato/negócio de outro tenant"
+    },
+    {
+      "id": "planos",
+      "lane": "banco",
+      "col": 1,
+      "type": "database",
+      "label": "account_plans",
+      "sublabel": "as categorias"
+    },
+    {
+      "id": "contatos",
+      "lane": "fora",
+      "col": 2,
+      "type": "database",
+      "label": "contacts"
+    },
+    {
+      "id": "leads",
+      "lane": "fora",
+      "col": 1,
+      "type": "database",
+      "label": "crm_leads (status won)"
+    },
+    {
+      "id": "config",
+      "lane": "fora",
+      "col": 3,
+      "type": "frontend",
+      "label": "Configurações › Financeiro",
+      "sublabel": "criar/renomear categorias e recorrências"
+    },
+    {
+      "id": "faturamento",
+      "lane": "fora",
+      "col": 4,
+      "type": "frontend",
+      "label": "Análise › Faturamento",
+      "sublabel": "o mesmo dinheiro, para viewer+"
+    },
+    {
+      "id": "audit",
+      "lane": "fora",
+      "col": 5,
+      "type": "database",
+      "label": "api_audit_log",
+      "sublabel": "lancamento_criado · _corrigido · _pago · _removido"
+    },
+    {
+      "id": "capacidade",
+      "lane": "fora",
+      "col": 5,
+      "type": "config",
+      "label": "capacidade financeiro_caixa",
+      "sublabel": "organizations.settings.financeiro.aba_no_menu — nasce desligada (menu no teto da dobra)"
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "from": "nav",
+      "to": "painel",
+      "label": "porta 1 (admin)"
+    },
+    {
+      "id": "e2",
+      "from": "nav",
+      "to": "caixa_tela",
+      "label": "porta 2 (admin)"
+    },
+    {
+      "id": "e3",
+      "from": "painel",
+      "to": "rota_caixa",
+      "label": "cartões do mês"
+    },
+    {
+      "id": "e4",
+      "from": "painel",
+      "to": "rota_ganhos",
+      "label": "o que sugerir"
+    },
+    {
+      "id": "e5",
+      "from": "painel",
+      "to": "dialogo",
+      "label": "Lançar a receber (lead_id preenchido)"
+    },
+    {
+      "id": "e6",
+      "from": "caixa_tela",
+      "to": "rota_caixa",
+      "label": "período escolhido ou todos"
+    },
+    {
+      "id": "e7",
+      "from": "caixa_tela",
+      "to": "dialogo",
+      "label": "novo / corrigir"
+    },
+    {
+      "id": "e8",
+      "from": "caixa_tela",
+      "to": "rota_lanc_id",
+      "label": "confirmar · apagar pendente"
+    },
+    {
+      "id": "e9",
+      "from": "dialogo",
+      "to": "rota_lanc",
+      "label": "criar"
+    },
+    {
+      "id": "e10",
+      "from": "dialogo",
+      "to": "rota_lanc_id",
+      "label": "corrigir"
+    },
+    {
+      "id": "e11",
+      "from": "dialogo",
+      "to": "config",
+      "label": "criar ou renomear categorias"
+    },
+    {
+      "id": "e12",
+      "from": "rota_caixa",
+      "to": "regra_caixa",
+      "label": "toda soma é daqui — a tela não conta"
+    },
+    {
+      "id": "e13",
+      "from": "regra_caixa",
+      "to": "regra_recorr",
+      "label": "previstos usam a regra do cron"
+    },
+    {
+      "id": "e14",
+      "from": "cron",
+      "to": "regra_recorr",
+      "label": "a mesma regra"
+    },
+    {
+      "id": "e15",
+      "from": "rota_caixa",
+      "to": "entries",
+      "label": "lê em páginas de 1000"
+    },
+    {
+      "id": "e16",
+      "from": "rota_caixa",
+      "to": "moldes",
+      "label": "moldes ativos → previstos"
+    },
+    {
+      "id": "e17",
+      "from": "rota_caixa",
+      "to": "planos",
+      "label": "nomes das categorias"
+    },
+    {
+      "id": "e18",
+      "from": "rota_caixa",
+      "to": "contatos",
+      "label": "só os contatos do extrato"
+    },
+    {
+      "id": "e19",
+      "from": "rota_ganhos",
+      "to": "leads",
+      "label": "won, valor > 0, 60 dias"
+    },
+    {
+      "id": "e20",
+      "from": "rota_ganhos",
+      "to": "entries",
+      "label": "tira os já lançados (lead_id)"
+    },
+    {
+      "id": "e21",
+      "from": "rota_lanc",
+      "to": "moldes",
+      "label": "mensal: cria o molde (starts_on = data)"
+    },
+    {
+      "id": "e22",
+      "from": "rota_lanc",
+      "to": "entries",
+      "label": "1ª competência ligada ao molde"
+    },
+    {
+      "id": "e23",
+      "from": "rota_lanc_id",
+      "to": "entries",
+      "label": "pagar · corrigir · apagar"
+    },
+    {
+      "id": "e24",
+      "from": "cron",
+      "to": "entries",
+      "label": "competência do dia, com o cliente do molde"
+    },
+    {
+      "id": "e25",
+      "from": "entries",
+      "to": "gatilho",
+      "label": "before insert/update de contact_id, lead_id"
+    },
+    {
+      "id": "e26",
+      "from": "moldes",
+      "to": "gatilho",
+      "label": "before insert/update de contact_id"
+    },
+    {
+      "id": "e27",
+      "from": "gatilho",
+      "to": "contatos",
+      "label": "mesma organização?"
+    },
+    {
+      "id": "e28",
+      "from": "gatilho",
+      "to": "leads",
+      "label": "mesma organização?"
+    },
+    {
+      "id": "e29",
+      "from": "rota_lanc",
+      "to": "audit",
+      "label": "financeiro.lancamento_criado"
+    },
+    {
+      "id": "e30",
+      "from": "rota_lanc_id",
+      "to": "audit",
+      "label": "_corrigido · _pago · _removido"
+    },
+    {
+      "id": "e31",
+      "from": "faturamento",
+      "to": "entries",
+      "label": "o mesmo dinheiro; invalidado junto"
+    },
+    {
+      "id": "e32",
+      "from": "config",
+      "to": "capacidade",
+      "label": "Mostrar a aba Financeiro no menu (PATCH /settings/financeiro-aba, admin)"
+    },
+    {
+      "id": "e33",
+      "from": "capacidade",
+      "to": "nav",
+      "label": "desligada: o grupo some do menu, do hub e do ⌘K"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "O laço de retorno (invariante 7)",
+      "items": [
+        "ganho no funil sem lançamento aparece no Painel por 60 dias e some quando é lançado (índice único em lead_id): a demanda tem próximo passo e não morre de velhice no topo",
+        "lançamento pendente vira 'A confirmar' no extrato e na previsão; confirmar é um clique, e o cartão de saldo muda na hora (toda escrita invalida ['financeiro'])",
+        "o molde mensal grava a competência pendente no dia; antes disso ela aparece como Prevista, calculada com a MESMA regra do cron"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Não-ligações deliberadas",
+      "items": [
+        "o ganho NÃO lança sozinho: o valor do negócio nem sempre é dinheiro a receber (loja, infoproduto). A opção 'comanda no ganho' do módulo financeiro continua sendo a via automática, e esta aba não a toca",
+        "a tela NÃO soma: nem os cartões nem o fluxo. O 'Total no filtro' reaplica resumoDoCaixa às linhas que a rota devolveu inteiras",
+        "linha Prevista NÃO tem ação: ela não existe no banco até o dia da competência",
+        "moedas diferentes NÃO se somam: o que não é da moeda da organização sai das contas e volta contado em outras_moedas"
+      ]
+    }
+  ]
+}
