@@ -153,4 +153,10 @@ export {
   ArrowsOutSimple,
   // /admin/modulos: módulo opcional com tabela própria (ADR-0002)
   Stack,
+  // aba Financeiro: Painel, Caixa, entrada/saída no extrato e o lançamento mensal
+  Wallet,
+  CashRegister,
+  ArrowUpRight,
+  ArrowDownRight,
+  Repeat,
 } from "@phosphor-icons/react/dist/ssr";

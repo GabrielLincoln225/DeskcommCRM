@@ -16,7 +16,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { modulosLigados, type ModuloOpcional } from "@/lib/instalacao/modulos";
 import { logger } from "@/lib/logger";
 
-export const CAPACIDADES_DA_ORGANIZACAO = ["propostas"] as const;
+export const CAPACIDADES_DA_ORGANIZACAO = ["propostas", "financeiro_caixa"] as const;
 export type CapacidadeDaOrganizacao = (typeof CAPACIDADES_DA_ORGANIZACAO)[number];
 
 /**
@@ -24,9 +24,17 @@ export type CapacidadeDaOrganizacao = (typeof CAPACIDADES_DA_ORGANIZACAO)[number
  * dela; com o módulo desligado no servidor, a chave da empresa não liga nada —
  * e é aqui, e não em cada consumidor, que as duas se somam: tela, menu, rota,
  * ferramenta do agente e cron leem a mesma resposta.
+ *
+ * `null` = capacidade sem módulo: o que ela liga já é do núcleo. É o caso da
+ * aba Financeiro (`financeiro_caixa`) — o caixa é núcleo e já existe em toda
+ * instalação; a capacidade só decide se ELA aparece no menu desta empresa. Ela
+ * nasce desligada porque o menu lateral está no teto da dobra (medido em
+ * `tests/unit/interface-por-empresa.test.ts`): quem liga escolhe pagar as
+ * linhas, e quem não liga não perde nenhuma.
  */
-const MODULO_DA_CAPACIDADE: Record<CapacidadeDaOrganizacao, ModuloOpcional> = {
+const MODULO_DA_CAPACIDADE: Record<CapacidadeDaOrganizacao, ModuloOpcional | null> = {
   propostas: "propostas",
+  financeiro_caixa: null,
 };
 
 function objeto(v: unknown): Record<string, unknown> | null {
@@ -42,8 +50,14 @@ export function capacidadesLigadas(
   modulos: readonly ModuloOpcional[],
 ): CapacidadeDaOrganizacao[] {
   const propostas = objeto(objeto(settings)?.proposals);
-  const daEmpresa: CapacidadeDaOrganizacao[] = propostas?.enabled === true ? ["propostas"] : [];
-  return daEmpresa.filter((c) => modulos.includes(MODULO_DA_CAPACIDADE[c]));
+  const financeiro = objeto(objeto(settings)?.financeiro);
+  const daEmpresa: CapacidadeDaOrganizacao[] = [];
+  if (propostas?.enabled === true) daEmpresa.push("propostas");
+  if (financeiro?.aba_no_menu === true) daEmpresa.push("financeiro_caixa");
+  return daEmpresa.filter((c) => {
+    const modulo = MODULO_DA_CAPACIDADE[c];
+    return modulo === null || modulos.includes(modulo);
+  });
 }
 
 /** Lê a linha da organização. Nunca lança: erro = nenhuma capacidade. */

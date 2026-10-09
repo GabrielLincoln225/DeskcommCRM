@@ -1,0 +1,7 @@
+---
+impacto: capacidade_nova
+secao: adicionado
+titulo: Nova aba Financeiro, com Painel do mês e Caixa para lançar receitas e despesas, que o administrador liga em Configurações › Financeiro
+---
+
+Em Configurações › Financeiro, o administrador pode ligar **Mostrar a aba Financeiro no menu**. Ligada, ela acrescenta ao menu o grupo **Financeiro**, com duas telas visíveis só para administradores. Desligada (o padrão), o menu fica como era. O **Painel** mostra os quatro números do mês: saldo líquido em caixa, receitas realizadas, custos e despesas, e a previsão do período com o que ainda falta receber e pagar. Logo abaixo ficam os negócios ganhos no funil nos últimos 60 dias que ainda não estão no caixa. Cada um tem um botão "Lançar a receber" que já vem com valor e cliente preenchidos, e nada é lançado sem a sua confirmação. O **Caixa** é o livro-caixa do mês, ou de todos os meses juntos. Nele você filtra por receitas, despesas, a confirmar e confirmados, busca por descrição, categoria, cliente ou valor, e pode confirmar o que foi pago, corrigir ou apagar um lançamento pendente. Há também as abas "Fluxo mensal" e "Despesas por categoria". O lançamento pode ser marcado como **Todo mês**: a recorrência começa na data escolhida, os meses seguintes aparecem como previstos e cada um é gravado como pendente no dia, para você confirmar quando o dinheiro passar. Cada lançamento pode ser ligado a um contato do CRM. As categorias são o plano de contas de Configurações › Financeiro. Nada precisa ser feito ao atualizar: a aba nasce desligada em toda organização.
