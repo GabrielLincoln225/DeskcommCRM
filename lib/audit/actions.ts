@@ -756,6 +756,7 @@ export const AUDIT_ACTIONS = [
   "processos.modelo_removido",
   "processos.processo_iniciado",
   "processos.processo_alterado",
+  "processos.processo_removido",
   "processos.item_alterado",
   "processos.aba_alterada",
   // Módulo opcional de honorários (advocacia, ADR-0002) — contrato criado e parcela marcada
@@ -1057,6 +1058,9 @@ export const AUDIT_ACTIONS = [
   "campaign.resumed",
   "campaign.cancelled",
   "campaign.duplicated",
+  // Campanha apagada (fork Konnexo): só fora de envio — rascunho, preparada, concluída ou
+  // cancelada. As mensagens que já saíram continuam nas conversas.
+  "campaign.deleted",
   // Rodada do cron que MEXEU em alguma campanha (enviou, pulou, concluiu,
   // promoveu agendada). Rodada vazia não audita — o critério do `CLAUDE.md`.
   "cron.campaign_worker",
@@ -1235,6 +1239,12 @@ export const AUDIT_ACTIONS = [
   // Planos de tarefa (#1752): a lista `settings.task_plans` mudou pela rota
   // `settings/task-plans` — mesma família de `campaign.settings_updated`.
   "task_plans.settings_updated",
+  // Tarefas recorrentes mensais (migration 9003): molde criado, pausado/retomado, apagado,
+  // e a rodada do cron que gerou tarefas.
+  "tarefas.recorrencia_criada",
+  "tarefas.recorrencia_alterada",
+  "tarefas.recorrencia_removida",
+  "tarefas.recorrencia_gerada",
 
   // Fontes liberadas do banco externo (Spec 23): o administrador trocou o modo
   // (`all`/`list`) e a lista do que o assistente pode ler. O metadata carrega só

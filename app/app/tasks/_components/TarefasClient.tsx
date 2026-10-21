@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -171,6 +172,10 @@ export function TarefasClient({
           >
             <ArrowsClockwise size={14} className={cn(carregando && "animate-spin")} aria-hidden />
             {t("Atualizar")}
+          </Button>
+
+          <Button variant="outline" size="sm" className="h-9 text-xs" asChild>
+            <Link href="/app/tasks/recorrentes">{t("Recorrentes")}</Link>
           </Button>
 
           {podeEditar && (

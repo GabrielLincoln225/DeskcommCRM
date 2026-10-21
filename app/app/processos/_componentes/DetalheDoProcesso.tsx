@@ -10,6 +10,7 @@
  * não se aplicou a este cliente não precisa ser marcado para encerrar.
  */
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ import {
   dataCurta,
   useAlterarItem,
   useAlterarProcesso,
+  useApagarProcesso,
   useMembros,
   useProcesso,
   type ItemDoProcesso,
@@ -37,6 +39,8 @@ export function DetalheDoProcesso({ id, podeEditar }: { id: string; podeEditar: 
   const membros = useMembros();
   const alterarProcesso = useAlterarProcesso(id);
   const alterarItem = useAlterarItem(id);
+  const apagar = useApagarProcesso(id);
+  const router = useRouter();
 
   if (consulta.isLoading) return <p className="text-sm text-text-muted">{t("Carregando…")}</p>;
   if (consulta.isError || !consulta.data) {
@@ -104,6 +108,19 @@ export function DetalheDoProcesso({ id, podeEditar }: { id: string; podeEditar: 
                 {t("Reabrir processo")}
               </Button>
             )}
+            <Button
+              variant="outline"
+              className="text-destructive"
+              disabled={apagar.isPending}
+              onClick={() => {
+                if (window.confirm(t("Apagar este processo e todo o checklist dele? Não dá para desfazer."))) {
+                  apagar.mutate(undefined, { onSuccess: () => router.push("/app/processos") });
+                }
+              }}
+              data-testid="processo-apagar"
+            >
+              {t("Apagar processo")}
+            </Button>
           </div>
         ) : null}
       </header>

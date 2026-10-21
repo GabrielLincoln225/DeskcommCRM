@@ -324,6 +324,17 @@ export const NAV_CATALOG = [
     section: "O dia a dia da venda",
   },
   {
+    // TAREFAS RECORRENTES (migration 9003, fork Konnexo): os moldes mensais —
+    // ver, pausar e apagar. Cria-se pela "Nova tarefa". Sem sidebar, como os
+    // planos: é cadastro, a porta é o hub de Tarefas e o ⌘K.
+    href: "/app/tasks/recorrentes",
+    label: "Tarefas recorrentes",
+    description: "Tarefas que voltam todo mês no mesmo dia: ver, pausar e apagar.",
+    icon: "ArrowsClockwise",
+    group: "crm",
+    section: "O dia a dia da venda",
+  },
+  {
     // MÓDULO PROCESSOS (migration 9002): o checklist de cada cliente — o que já
     // foi feito, por quem, e o que falta. Uso diário de quem toca a operação
     // depois da venda, e por isso no menu; mas capacidade que a ORGANIZAÇÃO liga
