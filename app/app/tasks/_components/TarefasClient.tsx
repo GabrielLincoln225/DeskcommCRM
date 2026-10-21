@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { useUser } from "@/hooks/auth/AuthProvider";
 import { useT } from "@/hooks/i18n/useT";
-import { ArrowsClockwise, CalendarBlank, ListChecks, Plus } from "@/lib/ui/icons";
+import { ArrowsClockwise, CalendarBlank, ListChecks, Plus, Users } from "@/lib/ui/icons";
 import { cn } from "@/lib/utils";
 import { useTasks } from "@/hooks/tasks/useTasks";
 import { useAssignableMembers } from "@/hooks/inbox/useAssignableMembers";
@@ -23,6 +23,7 @@ import type { NovaTarefa, SituacaoDaTarefa, Tarefa } from "@/lib/tarefas/tipos";
 import { CalendarioDeTarefas } from "./CalendarioDeTarefas";
 import { FormularioDeTarefa } from "./FormularioDeTarefa";
 import { ListaDeTarefas } from "./ListaDeTarefas";
+import { TarefasPorCliente } from "./TarefasPorCliente";
 
 /** "aberto" não é uma situação do banco: é o filtro que a tela abre por padrão. */
 type FiltroDeSituacao = "aberto" | SituacaoDaTarefa;
@@ -36,7 +37,7 @@ export function TarefasClient({
 }) {
   const t = useT();
   const usuario = useUser();
-  const [modo, setModo] = useState<"lista" | "calendario">("lista");
+  const [modo, setModo] = useState<"lista" | "calendario" | "clientes">("lista");
   const [situacao, setSituacao] = useState<FiltroDeSituacao>("aberto");
   const [responsavel, setResponsavel] = useState<FiltroDeResponsavel>(minhasDeInicio ? "eu" : "todos");
   // `/team/assignable` exige agent: o viewer tomaria 403 (e um authz.denied no
@@ -161,6 +162,21 @@ export function TarefasClient({
               <CalendarBlank size={14} aria-hidden />
               {t("Calendário")}
             </button>
+            <button
+              type="button"
+              onClick={() => setModo("clientes")}
+              aria-pressed={modo === "clientes"}
+              data-testid="tarefas-modo-clientes"
+              className={cn(
+                "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
+                modo === "clientes"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <Users size={14} aria-hidden />
+              {t("Por cliente")}
+            </button>
           </div>
 
           <Button
@@ -187,7 +203,9 @@ export function TarefasClient({
         </div>
       </div>
 
-      {falhou ? (
+      {modo === "clientes" ? (
+        <TarefasPorCliente podeEditar={podeEditar} />
+      ) : falhou ? (
         <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-6 text-center">
           <p className="text-sm font-medium text-destructive">
             {t("Não foi possível carregar as tarefas.")}
