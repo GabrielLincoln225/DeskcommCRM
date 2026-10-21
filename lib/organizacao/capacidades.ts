@@ -23,7 +23,7 @@ import { telefoniaEmUso } from "@/lib/telefonia/em-uso";
  * Ela é uma capacidade da ORGANIZAÇÃO, com o mesmo desenho de `propostas` — não
  * uma segunda régua: o menu lê `capacidades_ligadas` e mais nada.
  */
-export const CAPACIDADES_DA_ORGANIZACAO = ["propostas", "telefonia", "financeiro_caixa"] as const;
+export const CAPACIDADES_DA_ORGANIZACAO = ["propostas", "telefonia", "financeiro_caixa", "processos_clientes"] as const;
 export type CapacidadeDaOrganizacao = (typeof CAPACIDADES_DA_ORGANIZACAO)[number];
 
 /**
@@ -43,6 +43,9 @@ const MODULO_DA_CAPACIDADE: Record<CapacidadeDaOrganizacao, ModuloOpcional | nul
   // `financeiro_caixa` (fork Konnexo): capacidade sem módulo — o caixa é núcleo;
   // a capacidade só decide se a aba aparece no menu desta empresa.
   financeiro_caixa: null,
+  // Módulo Processos (migration 9002): as tabelas são de toda instalação deste
+  // fork; a capacidade só decide se a aba aparece no menu desta empresa.
+  processos_clientes: null,
 };
 
 function objeto(v: unknown): Record<string, unknown> | null {
@@ -78,6 +81,8 @@ export function capacidadesLigadas(
   if (telefoniaEmUsoDaOrganizacao) daEmpresa.push("telefonia");
   const financeiro = objeto(objeto(settings)?.financeiro);
   if (financeiro?.aba_no_menu === true) daEmpresa.push("financeiro_caixa");
+  const processos = objeto(objeto(settings)?.processos);
+  if (processos?.aba_no_menu === true) daEmpresa.push("processos_clientes");
   return daEmpresa;
 }
 
