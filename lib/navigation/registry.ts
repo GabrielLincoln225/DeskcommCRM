@@ -43,6 +43,7 @@ import {
   Wallet,
   CashRegister,
   CheckSquareOffset,
+  ArrowsClockwise,
   WebhooksLogo,
 } from "@/lib/ui/icons";
 
@@ -102,6 +103,7 @@ const ICONS = {
   Wallet,
   CashRegister,
   CheckSquareOffset,
+  ArrowsClockwise,
   WebhooksLogo,
 };
 export interface NavDestination extends Omit<NavMetadata, "icon"> {

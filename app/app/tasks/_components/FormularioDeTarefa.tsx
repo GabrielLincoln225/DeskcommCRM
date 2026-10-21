@@ -1,5 +1,7 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
+import Link from "next/link";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -23,6 +25,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useUser } from "@/hooks/auth/AuthProvider";
 import { useT } from "@/hooks/i18n/useT";
 import { useAssignableMembers } from "@/hooks/inbox/useAssignableMembers";
+import { apiClient } from "@/lib/api/client";
 import type {
   NovaTarefa,
   PrioridadeDaTarefa,
@@ -108,6 +111,10 @@ export function FormularioDeTarefa({
   const responsavelInicial = (editando ? tarefa?.assigned_to : responsavelPadrao) ?? NINGUEM;
   const [responsavel, setResponsavel] = useState<string>(responsavelInicial);
   const [salvando, setSalvando] = useState(false);
+  // Tarefa mensal (migration 9003): só na criação. O dia do prazo vira o dia
+  // de todo mês; as próximas nascem sozinhas 3 dias antes.
+  const [repetir, setRepetir] = useState(false);
+  const qc = useQueryClient();
   const [erro, setErro] = useState<string | null>(null);
 
   async function enviar(e: React.FormEvent) {
@@ -121,9 +128,31 @@ export function FormularioDeTarefa({
     // ninguém ter pedido.
     const prazo = dia ? new Date(`${dia}T${hora || "00:00"}:00`).toISOString() : null;
 
+    if (repetir && !dia) {
+      setErro(t("Escolha o dia do prazo: é ele que se repete todo mês."));
+      return;
+    }
+
     setSalvando(true);
     setErro(null);
     try {
+      if (repetir) {
+        await apiClient.post("/api/v1/tasks/recorrencias", {
+          title: titulo.trim(),
+          description: descricao.trim() || null,
+          priority: prioridade,
+          assigned_to: responsavel === NINGUEM ? null : responsavel,
+          contact_id: contactId ?? null,
+          lead_id: leadId ?? null,
+          starts_on: dia,
+          due_time: hora || "09:00",
+          lead_days: 3,
+        });
+        await qc.invalidateQueries({ queryKey: ["crm_tasks"] });
+        await qc.invalidateQueries({ queryKey: ["tarefas-recorrentes"] });
+        aoMudarAbertura(false);
+        return;
+      }
       await aoSalvar({
         title: titulo.trim(),
         description: descricao.trim() || null,
@@ -205,6 +234,31 @@ export function FormularioDeTarefa({
               />
             </div>
           </div>
+
+          {!editando ? (
+            <div className="space-y-1 rounded-md border border-border p-2">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={repetir}
+                  onChange={(e) => setRepetir(e.target.checked)}
+                  className="h-4 w-4 accent-accent"
+                  data-testid="tarefa-repetir"
+                />
+                {t("Repetir todo mês")}
+              </label>
+              {repetir ? (
+                <p className="text-xs text-text-muted">
+                  {dia
+                    ? `${t("Todo dia")} ${Number(dia.slice(8, 10))}${". "}${t("A tarefa de cada mês aparece 3 dias antes, mesmo que a anterior não tenha sido feita.")}`
+                    : t("Escolha o dia do prazo: é ele que se repete todo mês.")}{" "}
+                  <Link href="/app/tasks/recorrentes" className="text-accent hover:underline">
+                    {t("Ver tarefas recorrentes")}
+                  </Link>
+                </p>
+              ) : null}
+            </div>
+          ) : null}
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">

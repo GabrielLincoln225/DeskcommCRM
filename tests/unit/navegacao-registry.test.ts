@@ -190,6 +190,8 @@ describe("hubSections", () => {
       // rotina do dia, não preparação nem fechamento. `sidebar: false` deixa o
       // menu do dia a dia com os 20 itens de sempre; a porta é o hub e o ⌘K.
       "/app/tasks/planos",
+      // Tarefas recorrentes (9003): cadastro dos moldes mensais, no hub de Tarefas.
+      "/app/tasks/recorrentes",
       // Processos (9002): o checklist de cada cliente, rotina do dia como Tarefas.
       "/app/processos",
       "/app/calls",

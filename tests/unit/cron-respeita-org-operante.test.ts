@@ -72,6 +72,7 @@ const SEM_FILTRO: Record<string, string> = {
   "proposta-travada": "só destrava proposta presa em 'enviando'; escrita interna",
   "recover-stuck-messages": "marca failed e avisa, nunca reenvia: deliberadamente não gatilhado (spec §4)",
   "recurring-entries": "só gera lançamento financeiro pendente; escrita interna",
+  "recurring-tasks": "só cria a tarefa interna do mês (9003); nenhuma mensagem, sem custo nem saída",
   "risk-watcher": "só classifica risco e registra a proposta de reativação; nada sai",
   "routing-worker": "só distribui o dono da conversa; sem custo nem saída",
   "snooze-watcher": "só reabre conversa adiada; sem custo nem saída",
