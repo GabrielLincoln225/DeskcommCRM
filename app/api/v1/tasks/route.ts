@@ -42,7 +42,7 @@ export const dynamic = "force-dynamic";
 
 /** As colunas que a tela lê. Explícitas para o `select *` não vazar coluna nova. */
 const COLUNAS =
-  "id, organization_id, title, description, due_date, priority, status, lead_id, contact_id, demanda_id, assigned_to, created_by, created_at, updated_at, recurrence_id, lead:crm_leads(id, title)";
+  "id, organization_id, title, description, due_date, priority, status, lead_id, contact_id, demanda_id, assigned_to, created_by, created_at, updated_at, recurrence_id, lead:crm_leads(id, title), contact:contacts(id, name, display_name, phone_number)";
 
 const criacaoSchema = z.object({
   title: z.string().trim().min(1).max(255),

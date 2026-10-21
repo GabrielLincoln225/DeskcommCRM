@@ -60,6 +60,8 @@ export interface Tarefa {
   updated_at: string;
   /** O molde mensal que gerou esta tarefa (migration 9003). Nulo = tarefa avulsa. */
   recurrence_id?: string | null;
+  /** Derivado: o cliente de `contact_id`, embutido pela lista (visão Por cliente). */
+  contact?: { id: string; name: string | null; display_name: string | null; phone_number: string | null } | null;
   /**
    * Derivado (não é coluna): o negócio de `lead_id`, embutido pela rota para a
    * lista de Tarefas dizer DE QUEM é a tarefa sem uma consulta por linha. Nulo
