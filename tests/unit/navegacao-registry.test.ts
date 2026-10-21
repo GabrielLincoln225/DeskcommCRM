@@ -129,6 +129,10 @@ describe("sidebarGroups", () => {
       "/app/kanban",
       "/app/contacts",
       "/app/tasks",
+      // Módulo Processos (migration 9002): só aparece para a empresa que liga a
+      // capacidade `processos_clientes` — sem a lista de capacidades, `sidebarGroups`
+      // não filtra por ela, e por isso a porta aparece nesta medida.
+      "/app/processos",
       // "/app/calls" (telefonia por SIP) NÃO entra aqui, e a ausência é a
       // decisão: o módulo é OPCIONAL e nasce desligado (doc 27), então a porta
       // no sidebar custaria um item a TODA instalação — e o vigésimo item é o
@@ -186,6 +190,8 @@ describe("hubSections", () => {
       // rotina do dia, não preparação nem fechamento. `sidebar: false` deixa o
       // menu do dia a dia com os 20 itens de sempre; a porta é o hub e o ⌘K.
       "/app/tasks/planos",
+      // Processos (9002): o checklist de cada cliente, rotina do dia como Tarefas.
+      "/app/processos",
       "/app/calls",
       "/app/comandas",
       "/app/products",

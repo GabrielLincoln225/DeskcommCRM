@@ -16,7 +16,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { modulosLigados, type ModuloOpcional } from "@/lib/instalacao/modulos";
 import { logger } from "@/lib/logger";
 
-export const CAPACIDADES_DA_ORGANIZACAO = ["propostas", "financeiro_caixa"] as const;
+export const CAPACIDADES_DA_ORGANIZACAO = ["propostas", "financeiro_caixa", "processos_clientes"] as const;
 export type CapacidadeDaOrganizacao = (typeof CAPACIDADES_DA_ORGANIZACAO)[number];
 
 /**
@@ -35,6 +35,9 @@ export type CapacidadeDaOrganizacao = (typeof CAPACIDADES_DA_ORGANIZACAO)[number
 const MODULO_DA_CAPACIDADE: Record<CapacidadeDaOrganizacao, ModuloOpcional | null> = {
   propostas: "propostas",
   financeiro_caixa: null,
+  // Módulo Processos (migration 9002): as tabelas são de toda instalação deste
+  // fork; a capacidade só decide se a aba aparece no menu desta empresa.
+  processos_clientes: null,
 };
 
 function objeto(v: unknown): Record<string, unknown> | null {
@@ -51,9 +54,11 @@ export function capacidadesLigadas(
 ): CapacidadeDaOrganizacao[] {
   const propostas = objeto(objeto(settings)?.proposals);
   const financeiro = objeto(objeto(settings)?.financeiro);
+  const processos = objeto(objeto(settings)?.processos);
   const daEmpresa: CapacidadeDaOrganizacao[] = [];
   if (propostas?.enabled === true) daEmpresa.push("propostas");
   if (financeiro?.aba_no_menu === true) daEmpresa.push("financeiro_caixa");
+  if (processos?.aba_no_menu === true) daEmpresa.push("processos_clientes");
   return daEmpresa.filter((c) => {
     const modulo = MODULO_DA_CAPACIDADE[c];
     return modulo === null || modulos.includes(modulo);

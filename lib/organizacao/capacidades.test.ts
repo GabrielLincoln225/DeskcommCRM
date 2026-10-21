@@ -44,6 +44,17 @@ describe("a aba Financeiro (financeiro_caixa) — capacidade sem módulo", () =>
   });
 });
 
+describe("a aba Processos (processos_clientes) — capacidade sem módulo", () => {
+  it("processos.aba_no_menu === true liga, sem depender de módulo da instalação", () => {
+    expect(capacidadesLigadas({ processos: { aba_no_menu: true } }, [])).toEqual(["processos_clientes"]);
+  });
+  it("só o booleano true liga", () => {
+    for (const s of [{ processos: { aba_no_menu: "true" } }, { processos: {} }, {}]) {
+      expect(capacidadesLigadas(s, []), JSON.stringify(s)).toEqual([]);
+    }
+  });
+});
+
 /** Banco falso das duas leituras: a linha da organização e `platform_config`. */
 function dbQueDevolve(
   resultado: { data: unknown; error: unknown } | Error,

@@ -617,6 +617,28 @@ const DA_EMPRESA: RecursoOpcional[] = [
           ? "ligado"
           : "desligado",
   },
+  {
+    id: "aba_financeiro",
+    nome: "Aba Financeiro",
+    oQueFaz: "Painel do mês e Caixa para lançar receitas e despesas, só para quem administra a empresa.",
+    nivel: "organizacao",
+    padrao: "desligado",
+    quemDecide: "admin",
+    href: "/app/settings/tenant/financeiro",
+    capacidade: "financeiro_caixa",
+    ler: peloSettings((s) => objeto(s.financeiro)?.aba_no_menu === true),
+  },
+  {
+    id: "aba_processos",
+    nome: "Aba Processos",
+    oQueFaz: "O checklist de cada cliente a partir de modelos de processo, com responsável, prazo e observação.",
+    nivel: "organizacao",
+    padrao: "desligado",
+    quemDecide: "admin",
+    href: "/app/settings/tenant/processos",
+    capacidade: "processos_clientes",
+    ler: peloSettings((s) => objeto(s.processos)?.aba_no_menu === true),
+  },
 ];
 
 const DE_CADA_AGENTE: RecursoOpcional[] = [
