@@ -165,4 +165,6 @@ export {
   ArrowUpRight,
   ArrowDownRight,
   Repeat,
+  // módulo Processos: o checklist de cada cliente
+  CheckSquareOffset,
 } from "@phosphor-icons/react/dist/ssr";

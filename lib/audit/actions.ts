@@ -749,6 +749,15 @@ export const AUDIT_ACTIONS = [
   "financeiro.lancamento_corrigido",
   // A organização ligou ou desligou a aba Financeiro no menu (capacidade `financeiro_caixa`).
   "financeiro.aba_alterada",
+  // Módulo Processos (migration 9002): modelos editados pelo admin, processo aberto/encerrado
+  // por cliente, item do checklist marcado ou ajustado, e a aba ligada no menu.
+  "processos.modelo_criado",
+  "processos.modelo_alterado",
+  "processos.modelo_removido",
+  "processos.processo_iniciado",
+  "processos.processo_alterado",
+  "processos.item_alterado",
+  "processos.aba_alterada",
   // Módulo opcional de honorários (advocacia, ADR-0002) — contrato criado e parcela marcada
   // como paga. Pagar uma parcela cria um `financial_entries` por baixo (DIRC "integrar"), mas
   // o código aqui é do módulo: quem lê a auditoria do caixo núcleo não precisa saber que a

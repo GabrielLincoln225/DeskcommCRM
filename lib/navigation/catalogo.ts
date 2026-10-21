@@ -324,6 +324,21 @@ export const NAV_CATALOG = [
     section: "O dia a dia da venda",
   },
   {
+    // MÓDULO PROCESSOS (migration 9002): o checklist de cada cliente — o que já
+    // foi feito, por quem, e o que falta. Uso diário de quem toca a operação
+    // depois da venda, e por isso no menu; mas capacidade que a ORGANIZAÇÃO liga
+    // (Configurações › Processos), pelo mesmo motivo da aba Financeiro: o menu
+    // lateral está no teto da dobra (tests/unit/interface-por-empresa.test.ts).
+    href: "/app/processos",
+    label: "Processos",
+    description: "O checklist de cada cliente: o que já foi feito, por quem, e o que falta.",
+    icon: "CheckSquareOffset",
+    group: "crm",
+    section: "O dia a dia da venda",
+    sidebar: true,
+    capacidade: "processos_clientes",
+  },
+  {
     // Módulo VoIP (migration 0347). No grupo do CRM pelo mesmo critério de
     // Tarefas: quem atende confere ligações perdidas e transcrições no dia a
     // dia, não como revisão deliberada.
@@ -497,6 +512,17 @@ export const NAV_CATALOG = [
     // instalação do `financeiro` em `/admin/modulos`; sem ele a porta some, como
     // `/app/honorarios`. O caixa (Configurações › Financeiro) é núcleo e fica.
     modulo: "financeiro",
+  },
+  {
+    // Os MODELOS de processo (os passos que se repetem com cada cliente) e a
+    // chave que mostra a aba Processos no menu. Cadastro de admin, sem sidebar.
+    href: "/app/settings/tenant/processos",
+    label: "Modelos de processo",
+    description: "Os passos de cada processo de cliente e a etapa do funil que abre um processo sozinho.",
+    icon: "CheckSquareOffset",
+    group: "organizacao",
+    section: "Sua empresa",
+    minRole: "admin",
   },
   {
     // O catálogo financeiro: contas, formas de pagamento e plano de contas.
