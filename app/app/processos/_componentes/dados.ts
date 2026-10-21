@@ -105,7 +105,7 @@ export function useModelos() {
 /** Quem pode ser responsável. Quem só lê (viewer) recebe 403 da rota: lista vazia. */
 export function useMembros() {
   return useQuery({
-    queryKey: ["team", "assignable"],
+    queryKey: [...CHAVE, "membros"],
     queryFn: async () => (await apiClient.get<{ data: Membro[] }>("/api/v1/team/assignable")).data,
     retry: false,
   });
@@ -149,6 +149,15 @@ export function useAlterarProcesso(id: string) {
   const invalidar = useInvalidar();
   return useMutation({
     mutationFn: (status: SituacaoDoProcesso) => apiClient.patch(`/api/v1/processos/${id}`, { status }),
+    onSuccess: () => void invalidar(),
+    onError: showApiError,
+  });
+}
+
+export function useApagarProcesso(id: string) {
+  const invalidar = useInvalidar();
+  return useMutation({
+    mutationFn: () => apiClient.delete(`/api/v1/processos/${id}`),
     onSuccess: () => void invalidar(),
     onError: showApiError,
   });

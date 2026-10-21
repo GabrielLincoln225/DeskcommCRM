@@ -93,3 +93,42 @@ export async function PATCH(req: NextRequest, ctx: Ctx): Promise<Response> {
 
   return ok({ id, status }, { requestId });
 }
+
+/**
+ * Apagar o processo — com o checklist inteiro (cascata dos itens). Para um
+ * processo aberto por engano ou de teste. Cancelar continua sendo o caminho
+ * quando o que se quer é guardar o registro de que ele existiu.
+ */
+export async function DELETE(_req: NextRequest, ctx: Ctx): Promise<Response> {
+  const supportDenied = await requireSupportWrite();
+  if (supportDenied) return supportDenied;
+
+  const requestId = randomUUID();
+  const authz = await requireRole("manager", { requestId, resource: "processos" });
+  if (!authz.ok) return authz.response;
+
+  const { id } = await ctx.params;
+  if (!UUID_RX.test(id)) return fail("invalid_request", "id inválido.", 400, { requestId });
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("client_processes")
+    .delete()
+    .eq("id", id)
+    .eq("organization_id", authz.org.orgId)
+    .select("id, name, contact_id");
+  if (error) return fail("internal_error", error.message, 500, { requestId });
+  if (!data || data.length === 0) return fail("not_found", "Processo não encontrado.", 404, { requestId });
+
+  void audit({
+    action: "processos.processo_removido",
+    actorUserId: authz.user.id,
+    organizationId: authz.org.orgId,
+    resourceType: "client_process",
+    resourceId: id,
+    requestId,
+    metadata: { contact_id: (data[0] as { contact_id: string }).contact_id },
+  });
+
+  return ok({ id, removed: true }, { requestId });
+}

@@ -12,6 +12,7 @@ import { randomUUID } from "node:crypto";
 import type { NextRequest } from "next/server";
 
 import { fail, ok } from "@/lib/api/wrappers";
+import { audit } from "@/lib/audit";
 import { requireRole } from "@/lib/auth/require-role";
 import { carregarCampanha } from "@/lib/campanhas/acoes";
 import { ehEditavel, ehTerminal } from "@/lib/campanhas/maquina-de-estados";
@@ -288,4 +289,71 @@ export async function PATCH(
   // Editar rascunho NÃO audita: nada saiu dele, e auditar cada tecla encheria o
   // log com o que não tem consequência. Quem audita são as mudanças de estado.
   return ok({ ...(data as object), channel_session_ids: await lerPoolExtra(supabase, authz.org.orgId, id) }, { requestId });
+}
+
+/**
+ * DELETE /api/v1/campaigns/:id — apaga a campanha (fork Konnexo).
+ *
+ * Só FORA DE ENVIO: rascunho, preparada, concluída ou cancelada. Enviando,
+ * agendada ou pausada, a fila ainda pode mandar mensagem — primeiro cancela.
+ *
+ * O que vai junto (cascata do banco): a lista de destinatários e o pool de
+ * números da campanha. O que FICA: as mensagens que já saíram, nas conversas de
+ * cada cliente, e a lista de exclusão (quem pediu para sair continua fora).
+ */
+const SITUACOES_QUE_APAGAM = ["draft", "ready", "completed", "cancelled"] as const;
+
+export async function DELETE(
+  _req: NextRequest,
+  ctx: { params: Promise<{ id: string }> },
+): Promise<Response> {
+  const negado = await requireSupportWrite();
+  if (negado) return negado;
+
+  const requestId = randomUUID();
+  const authz = await requireRole("manager", { requestId, resource: "campaigns" });
+  if (!authz.ok) return authz.response;
+  const t = (texto: string) => traduzir(texto, authz.user.idioma);
+  const { id } = await ctx.params;
+
+  const supabase = createAdminClient();
+  const carregada = await carregarCampanha(supabase, authz.org.orgId, id);
+  if (!carregada.ok) {
+    return fail(carregada.codigo, t(carregada.mensagem), carregada.status, { requestId });
+  }
+  const { status, name } = carregada.campanha as { status: string; name: string };
+  if (!(SITUACOES_QUE_APAGAM as readonly string[]).includes(status)) {
+    return fail(
+      "campanha_em_envio",
+      t("Esta campanha ainda pode enviar mensagens. Cancele antes de apagar."),
+      409,
+      { requestId },
+    );
+  }
+
+  // Compare-and-set no estado conferido: se ela começou a enviar entre a
+  // conferência e o delete, nada é apagado.
+  const { data, error } = await supabase
+    .from("campaigns")
+    .delete()
+    .eq("organization_id", authz.org.orgId)
+    .eq("id", id)
+    .eq("status", status)
+    .select("id");
+  if (error) return fail("internal_error", error.message, 500, { requestId });
+  if (!data || data.length === 0) {
+    return fail("campanha_em_envio", t("O estado da campanha mudou. Recarregue a tela."), 409, { requestId });
+  }
+
+  void audit({
+    action: "campaign.deleted",
+    actorUserId: authz.user.id,
+    organizationId: authz.org.orgId,
+    resourceType: "campaign",
+    resourceId: id,
+    requestId,
+    metadata: { status, name },
+  });
+
+  return ok({ id, removed: true }, { requestId });
 }

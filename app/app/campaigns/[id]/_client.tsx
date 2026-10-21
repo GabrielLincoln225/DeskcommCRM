@@ -14,8 +14,13 @@
  * É a pergunta que o operador faz primeiro quando 500 viram 80. Sem o motivo ao
  * lado do número, ele conclui que o sistema comeu a lista.
  */
+import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+
+import { showApiError } from "@/components/feedback/ApiErrorToast";
+import { apiClient } from "@/lib/api/client";
 
 import { EstadoDaCampanha } from "@/components/campanhas/EstadoDaCampanha";
 import { Button } from "@/components/ui/button";
@@ -53,6 +58,9 @@ export function DetalheDaCampanha({ id }: { id: string }) {
   const acao = useAcaoDeCampanha(id);
   const [confirmando, setConfirmando] = useState<AcaoDeCampanha | null>(null);
   const [testando, setTestando] = useState(false);
+  const [apagando, setApagando] = useState<"confirmar" | "enviando" | null>(null);
+  const router = useRouter();
+  const qc = useQueryClient();
 
   if (campanha.isLoading) {
     return (
@@ -92,6 +100,19 @@ export function DetalheDaCampanha({ id }: { id: string }) {
   if (c.status === "scheduled") disponiveis.push("pausar", "cancelar");
   if (c.status === "paused") disponiveis.push("retomar", "cancelar");
   disponiveis.push("duplicar");
+  // Apagar só fora de envio — a rota recusa os demais estados com a mesma régua.
+  const podeApagar = ["draft", "ready", "completed", "cancelled"].includes(c.status);
+  const apagar = async () => {
+    setApagando("enviando");
+    try {
+      await apiClient.delete(`/api/v1/campaigns/${c.id}`);
+      await qc.invalidateQueries({ queryKey: ["campanhas"] });
+      router.push("/app/campaigns");
+    } catch (erro) {
+      setApagando(null);
+      showApiError(erro);
+    }
+  };
 
   return (
     <div className="space-y-4 p-6">
@@ -144,6 +165,17 @@ export function DetalheDaCampanha({ id }: { id: string }) {
               {t(ROTULO_DA_ACAO[a])}
             </Button>
           ))}
+          {podeApagar && (
+            <Button
+              variant="outline"
+              className="text-destructive"
+              disabled={apagando !== null}
+              onClick={() => setApagando("confirmar")}
+              data-testid="campanha-apagar"
+            >
+              {t("Apagar campanha")}
+            </Button>
+          )}
         </div>
       </header>
 
@@ -174,6 +206,22 @@ export function DetalheDaCampanha({ id }: { id: string }) {
               {t("Confirmar")}
             </Button>
             <Button variant="outline" onClick={() => setConfirmando(null)}>
+              {t("Voltar")}
+            </Button>
+          </div>
+        </Card>
+      )}
+
+      {apagando !== null && (
+        <Card className="space-y-3 border-destructive p-4">
+          <p className="text-sm">
+            {t("Apagar esta campanha? A lista de destinatários some junto. As mensagens que já saíram continuam nas conversas, e quem pediu para sair continua fora.")}
+          </p>
+          <div className="flex gap-2">
+            <Button disabled={apagando === "enviando"} onClick={() => void apagar()}>
+              {t("Apagar")}
+            </Button>
+            <Button variant="outline" disabled={apagando === "enviando"} onClick={() => setApagando(null)}>
               {t("Voltar")}
             </Button>
           </div>
