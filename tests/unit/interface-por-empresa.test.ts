@@ -220,6 +220,13 @@ describe("medição da folga (pergunta de aceite da issue #1341)", () => {
     );
   });
 
+  it("a empresa que liga a aba Processos paga uma porta, para toda a equipe; a que não liga, nenhuma", () => {
+    expect(itensNoMenuLateral(INTERFACE_COMPLETA, "admin", ["processos_clientes"])).toBe(16);
+    expect(itensNoMenuLateral(INTERFACE_COMPLETA, "agent", ["processos_clientes"])).toBe(
+      itensNoMenuLateral(INTERFACE_COMPLETA, "agent", []) + 1,
+    );
+  });
+
   it("configuração COMPLETA (ninguém escolheu): 15 itens, folga 0 — igual a hoje", () => {
     expect(itensNoMenuLateral(combinarInterfaces(completa, completa))).toBe(15);
   });
