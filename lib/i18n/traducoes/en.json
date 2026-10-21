@@ -9338,5 +9338,14 @@
   "Apagar recorrência": "Delete recurrence",
   "Apagar esta recorrência? As tarefas já criadas continuam; só param de nascer as próximas.": "Delete this recurrence? Tasks already created stay; only the next ones stop being created.",
   "Recorrentes": "Recurring",
-  "Tarefas que voltam todo mês no mesmo dia: ver, pausar e apagar.": "Tasks that come back every month on the same day: view, pause and delete."
+  "Tarefas que voltam todo mês no mesmo dia: ver, pausar e apagar.": "Tasks that come back every month on the same day: view, pause and delete.",
+  "Por cliente": "By client",
+  "Adicionar cliente": "Add client",
+  "Nenhum cliente com tarefas ainda. Adicione um cliente para montar o checklist dele.": "No clients with tasks yet. Add a client to build their checklist.",
+  "feitas": "done",
+  "recorrentes": "recurring",
+  "Escolha um cliente à esquerda para ver e montar o checklist dele.": "Pick a client on the left to see and build their checklist.",
+  "Nenhuma tarefa para este cliente ainda. Use Nova tarefa — marque Repetir todo mês para as mensais.": "No tasks for this client yet. Use New task — check Repeat every month for monthly ones.",
+  "Recorrentes deste cliente": "This client's recurring tasks",
+  "Nenhuma. Na Nova tarefa, marque Repetir todo mês.": "None. In New task, check Repeat every month."
 }
