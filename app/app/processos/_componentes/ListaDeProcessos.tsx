@@ -75,7 +75,7 @@ export function ListaDeProcessos({ podeEditar }: { podeEditar: boolean }) {
               onClick={() => setFiltro(f.id)}
               className={cn(
                 "rounded-sm px-3 py-1 text-sm",
-                filtro === f.id ? "bg-accent text-accent-fg" : "text-text-muted hover:text-text",
+                filtro === f.id ? "bg-accent text-accent-foreground" : "text-text-muted hover:text-text",
               )}
             >
               {f.rotulo}
