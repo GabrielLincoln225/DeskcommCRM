@@ -18108,7 +18108,6 @@ export const DICIONARIO: Traducoes = {
   "Nenhum lançamento com este filtro.": { es: "Ningún movimiento con este filtro." },
   "Confirmar recebimento": { es: "Confirmar cobro" },
   "Confirmar pagamento": { es: "Confirmar pago" },
-  "Corrigir": { es: "Corregir" },
   "Apagar lançamento": { es: "Eliminar movimiento" },
   "Apagar este lançamento pendente?": { es: "¿Eliminar este movimiento pendiente?" },
   "Total no filtro": { es: "Total del filtro" },
