@@ -19651,7 +19651,6 @@ export const DICIONARIO: Traducoes = {
   "Com ela, cada empresa conecta o número oficial do WhatsApp com um clique, sem ter conta no provedor. Os números ficam na conta da instalação e entram na fatura dela.": { es: "Con ella, cada empresa conecta el número oficial de WhatsApp con un clic, sin tener cuenta en el proveedor. Los números quedan en la cuenta de la instalación y entran en su factura." },
   // ── Financeiro: Painel e Caixa (aba Financeiro, migration 9001) ──
   "Como o dinheiro da empresa está neste mês: o que entrou, o que saiu e o que ainda falta.": { es: "Cómo está el dinero de la empresa este mes: lo que entró, lo que salió y lo que aún falta." },
-  "Painel": { es: "Panel" },
   "Telas do financeiro": { es: "Pantallas de finanzas" },
   "Livro-caixa: receitas, despesas e o que ainda falta receber ou pagar.": { es: "Libro de caja: ingresos, gastos y lo que aún falta cobrar o pagar." },
   "todos os meses": { es: "todos los meses" },

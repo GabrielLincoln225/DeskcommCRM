@@ -15,6 +15,7 @@ import { z } from "zod";
 import { ok, fail } from "@/lib/api/wrappers";
 import { audit } from "@/lib/audit";
 import { requireRole } from "@/lib/auth/require-role";
+import { portaDaAplicacao } from "@/lib/db";
 import { requireSupportWrite } from "@/lib/impersonate/support";
 import { hojeNoFuso } from "@/lib/processos/progresso";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -76,7 +77,7 @@ export async function POST(req: NextRequest): Promise<Response> {
   const admin = createAdminClient();
 
   if (lido.data.assigned_to) {
-    const veredito = await conferirResponsavel(admin, orgId, lido.data.assigned_to);
+    const veredito = await conferirResponsavel(portaDaAplicacao(), orgId, lido.data.assigned_to);
     if (veredito === "falha_na_consulta") return fail("internal_error", "Erro ao salvar.", 500, { requestId });
     if (veredito === "fora_da_equipe") {
       return fail("validation_failed", "O responsável escolhido não faz parte da equipe.", 422, { requestId });
