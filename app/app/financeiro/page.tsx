@@ -17,7 +17,7 @@ export default async function Page() {
         ativa="painel"
         titulo={t("Financeiro")}
         frase={t("Como o dinheiro da empresa está neste mês: o que entrou, o que saiu e o que ainda falta.")}
-        rotulos={{ painel: t("Painel"), caixa: t("Caixa"), navegacao: t("Telas do financeiro") }}
+        rotulos={{ geral: t("Geral"), painel: t("Painel do mês"), caixa: t("Caixa"), navegacao: t("Telas do financeiro") }}
       />
       <Painel mesAtual={mesAtual} />
     </div>

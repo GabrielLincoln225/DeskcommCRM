@@ -31,51 +31,17 @@ import {
   periodoDoMes,
   previstosDoMes,
   resumoDoCaixa,
-  type LinhaDoCaixa,
   type MoldeRecorrente,
 } from "@/lib/financeiro/caixa";
+import { lerLancamentos } from "@/lib/financeiro/leitura";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-const PAGINA = 1000;
-const TETO_DE_LINHAS = 20_000;
 /** Quantos meses o gráfico "Fluxo Mensal" mostra, terminando no mês escolhido. */
 const MESES_NO_FLUXO = 6;
 /** A visão consolidada projeta os moldes por este número de meses à frente. */
 const MESES_PROJETADOS = 12;
-
-const COLUNAS =
-  "id, direction, amount_cents, currency, description, entry_date, status, origin, account_plan_id, contact_id, lead_id, recurring_entry_id";
-
-type Supabase = Awaited<ReturnType<typeof createClient>>;
-
-async function lerLancamentos(
-  supabase: Supabase,
-  orgId: string,
-  colunas: string,
-  filtro: { de?: string; ate?: string; soPagos?: boolean },
-): Promise<{ linhas: LinhaDoCaixa[]; truncado: boolean } | { erro: string }> {
-  const linhas: LinhaDoCaixa[] = [];
-  for (let inicio = 0; inicio < TETO_DE_LINHAS; inicio += PAGINA) {
-    let q = supabase
-      .from("financial_entries")
-      .select(colunas)
-      .eq("organization_id", orgId)
-      .order("entry_date", { ascending: true })
-      .order("id", { ascending: true })
-      .range(inicio, inicio + PAGINA - 1);
-    if (filtro.de) q = q.gte("entry_date", filtro.de);
-    if (filtro.ate) q = q.lte("entry_date", filtro.ate);
-    if (filtro.soPagos) q = q.eq("status", "paid");
-    const { data, error } = await q;
-    if (error) return { erro: error.message };
-    const pagina = (data ?? []) as unknown as LinhaDoCaixa[];
-    linhas.push(...pagina);
-    if (pagina.length < PAGINA) return { linhas, truncado: false };
-  }
-  return { linhas, truncado: true };
-}
 
 function mesDeHoje(hoje: string): string {
   return hoje.slice(0, 7);
@@ -106,11 +72,11 @@ export async function GET(req: NextRequest): Promise<Response> {
   const supabase = await createClient();
   const moeda = await moedaDaOrganizacao(supabase, orgId);
 
-  const lidos = await lerLancamentos(supabase, orgId, COLUNAS, periodo ?? {});
+  const lidos = await lerLancamentos(supabase, orgId, periodo ?? {});
   if ("erro" in lidos) return fail("internal_error", lidos.erro, 500, { requestId });
 
   const mesesDoFluxo = mesesAte(mes, MESES_NO_FLUXO);
-  const pagosDoFluxo = await lerLancamentos(supabase, orgId, COLUNAS, {
+  const pagosDoFluxo = await lerLancamentos(supabase, orgId, {
     de: periodoDoMes(mesesDoFluxo[0]!).de,
     ate: periodoDoMes(mes).ate,
     soPagos: true,

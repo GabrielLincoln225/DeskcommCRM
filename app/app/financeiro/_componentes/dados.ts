@@ -14,6 +14,7 @@ import { showApiError } from "@/components/feedback/ApiErrorToast";
 import { apiClient } from "@/lib/api/client";
 import type { ContatoNomeavel } from "@/lib/contacts/rotulo-do-contato";
 import type { FatiaDeCategoria, LinhaDoCaixa, MesDoFluxo, ResumoDoCaixa } from "@/lib/financeiro/caixa";
+import type { MesDoHistorico, ReceitaDoCliente, ResumoGeral } from "@/lib/financeiro/geral";
 
 export type Categoria = { id: string; name: string; direction: "in" | "out"; is_active: boolean };
 export type Conta = { id: string; name: string };
@@ -34,6 +35,23 @@ export interface CaixaDoPeriodo {
   truncado: boolean;
 }
 
+/** A visão Geral — o caixa de todos os tempos (`GET /api/v1/financeiro/geral`). */
+export interface CaixaGeral {
+  hoje: string;
+  moeda: string;
+  resumo: ResumoGeral;
+  historico: MesDoHistorico[];
+  clientes: ReceitaDoCliente[];
+  por_categoria: FatiaDeCategoria[];
+  atrasados: LinhaDoCaixa[];
+  agenda: LinhaDoCaixa[];
+  dias_da_agenda: number;
+  categorias: Categoria[];
+  contatos: ContatoDoCaixa[];
+  outras_moedas: number;
+  truncado: boolean;
+}
+
 export interface GanhoSemLancamento {
   id: string;
   title: string;
@@ -49,6 +67,13 @@ export function useCaixa(mes: string) {
     queryFn: async () =>
       (await apiClient.get<{ data: CaixaDoPeriodo }>(`/api/v1/financeiro/caixa?mes=${encodeURIComponent(mes)}`))
         .data,
+  });
+}
+
+export function useGeral() {
+  return useQuery({
+    queryKey: ["financeiro", "geral"],
+    queryFn: async () => (await apiClient.get<{ data: CaixaGeral }>("/api/v1/financeiro/geral")).data,
   });
 }
 
@@ -96,6 +121,20 @@ export function useConfirmarLancamento() {
   const invalidar = useInvalidarFinanceiro();
   return useMutation({
     mutationFn: (id: string) => apiClient.patch(`/api/v1/financeiro/lancamentos/${id}`, { pay: true }),
+    onSuccess: invalidar,
+    onError: showApiError,
+  });
+}
+
+/**
+ * Grava a competência que um molde mensal ainda ia gerar: paga (`pagar: true`,
+ * o confirmar da linha prevista) ou pendente, para corrigir antes de confirmar.
+ */
+export function useLancarPrevisto() {
+  const invalidar = useInvalidarFinanceiro();
+  return useMutation({
+    mutationFn: async (corpo: { recurring_entry_id: string; entry_date: string; pagar: boolean }) =>
+      (await apiClient.post<{ data: { id: string; status: string } }>("/api/v1/financeiro/previstos", corpo)).data,
     onSuccess: invalidar,
     onError: showApiError,
   });

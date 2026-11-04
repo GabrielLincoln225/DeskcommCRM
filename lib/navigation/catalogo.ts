@@ -906,6 +906,20 @@ export const NAV_CATALOG = [
     minRole: "viewer",
   },
   {
+    // A VISÃO GERAL (fork Konnexo): o caixa de todos os tempos — saldo, em
+    // aberto, atrasados, o que vence nos próximos 30 dias, o mês a mês desde o
+    // começo e quem mais pagou. Só no hub e no ⌘K, sem linha no menu lateral:
+    // ela é a primeira aba do cabeçalho do Financeiro, e o menu está no teto
+    // da dobra (`tests/unit/interface-por-empresa.test.ts`).
+    href: "/app/financeiro/geral",
+    label: "Financeiro geral",
+    description: "O caixa de todos os tempos: saldo, em aberto, atrasados e os próximos vencimentos.",
+    icon: "ChartLineUp",
+    group: "financeiro",
+    minRole: "admin",
+    capacidade: "financeiro_caixa",
+  },
+  {
     // O PAINEL FINANCEIRO: os cartões do mês e os negócios ganhos que ainda não
     // viraram lançamento. É a primeira porta do grupo porque responde a
     // pergunta de quem abre: "como está o caixa este mês?".

@@ -1,6 +1,6 @@
 /**
- * O cabeçalho das duas telas do Financeiro: título, frase e as abas
- * Painel | Caixa. Server Component — a aba ativa é a rota, não estado.
+ * O cabeçalho das telas do Financeiro: título, frase e as abas
+ * Geral | Painel do mês | Caixa. Server Component — a aba ativa é a rota, não estado.
  */
 import Link from "next/link";
 
@@ -12,13 +12,14 @@ export function CabecalhoDoFinanceiro({
   frase,
   rotulos,
 }: {
-  ativa: "painel" | "caixa";
+  ativa: "geral" | "painel" | "caixa";
   titulo: string;
   frase: string;
   /** Já traduzidos por quem chama: Server Component não tem `useT`. */
-  rotulos: { painel: string; caixa: string; navegacao: string };
+  rotulos: { geral: string; painel: string; caixa: string; navegacao: string };
 }) {
   const abas = [
+    { id: "geral", href: "/app/financeiro/geral", rotulo: rotulos.geral },
     { id: "painel", href: "/app/financeiro", rotulo: rotulos.painel },
     { id: "caixa", href: "/app/financeiro/caixa", rotulo: rotulos.caixa },
   ] as const;

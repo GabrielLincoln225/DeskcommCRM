@@ -22,7 +22,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ m
         ativa="caixa"
         titulo={t("Caixa")}
         frase={t("Livro-caixa: receitas, despesas e o que ainda falta receber ou pagar.")}
-        rotulos={{ painel: t("Painel"), caixa: t("Caixa"), navegacao: t("Telas do financeiro") }}
+        rotulos={{ geral: t("Geral"), painel: t("Painel do mês"), caixa: t("Caixa"), navegacao: t("Telas do financeiro") }}
       />
       <Caixa mesInicial={mesInicial} mesAtual={mesAtual} />
     </div>

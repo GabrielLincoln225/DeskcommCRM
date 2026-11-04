@@ -11,8 +11,15 @@
  * apuração com regra própria, é a mesma régua aplicada ao recorte que a pessoa
  * escolheu.
  *
- * ⚠️ LINHA PREVISTA NÃO TEM AÇÃO. Ela é o que um molde mensal ainda vai gerar;
- * no dia, o cron a grava pendente e aí ela se confirma como qualquer outra.
+ * ⚠️ LINHA PREVISTA SE CONFIRMA GRAVANDO. Ela é o que um molde mensal ainda vai
+ * gerar, e não existe no banco: confirmar (ou corrigir) chama
+ * `POST /financeiro/previstos`, que grava ESSA competência a partir do molde —
+ * a mesma linha que o cron gravaria no dia, e que o índice único impede de
+ * nascer duas vezes. Antes disso a linha não tinha ação nenhuma, e a
+ * mensalidade paga antes do vencimento não tinha como ser marcada.
+ *
+ * ⚠️ ATRASADO é pendente com data antes de hoje (`estaAtrasado`), calculado
+ * contra o `hoje` que a rota devolve — o mesmo dia do cron e dos previstos.
  */
 import { useMemo, useState } from "react";
 
@@ -21,6 +28,7 @@ import { useT } from "@/hooks/i18n/useT";
 import { useTagDeIdioma } from "@/hooks/i18n/useLocaleDeData";
 import { rotuloDoContato } from "@/lib/contacts/rotulo-do-contato";
 import { resumoDoCaixa, type LinhaDoCaixa } from "@/lib/financeiro/caixa";
+import { estaAtrasado } from "@/lib/financeiro/geral";
 import { formatCents } from "@/lib/money";
 import {
   ArrowDownRight,
@@ -40,6 +48,7 @@ import {
   nomeDoMes,
   useCaixa,
   useConfirmarLancamento,
+  useLancarPrevisto,
   useRemoverLancamento,
   type ContatoDoCaixa,
 } from "./dados";
@@ -48,7 +57,7 @@ import { DespesasPorCategoria, FluxoMensal } from "./Graficos";
 import { SeletorDeMes } from "./SeletorDeMes";
 
 type Vista = "extrato" | "fluxo" | "categorias";
-type Filtro = "all" | "in" | "out" | "pending" | "paid";
+type Filtro = "all" | "in" | "out" | "pending" | "late" | "paid";
 
 export function Caixa({ mesInicial, mesAtual }: { mesInicial: string; mesAtual: string }) {
   const t = useT();
@@ -63,6 +72,7 @@ export function Caixa({ mesInicial, mesAtual }: { mesInicial: string; mesAtual: 
   const caixa = useCaixa(mes);
   const confirmar = useConfirmarLancamento();
   const remover = useRemoverLancamento();
+  const lancarPrevisto = useLancarPrevisto();
 
   const dados = caixa.data;
   const rotuloDoPeriodo = mes === "todos" ? t("todos os meses") : nomeDoMes(mes, tag);
@@ -83,6 +93,7 @@ export function Caixa({ mesInicial, mesAtual }: { mesInicial: string; mesAtual: 
     in: linhas.filter((l) => l.direction === "in").length,
     out: linhas.filter((l) => l.direction === "out").length,
     pending: linhas.filter((l) => l.status === "pending").length,
+    late: linhas.filter((l) => estaAtrasado(l, dados?.hoje ?? "")).length,
     paid: linhas.filter((l) => l.status === "paid").length,
   };
 
@@ -91,6 +102,7 @@ export function Caixa({ mesInicial, mesAtual }: { mesInicial: string; mesAtual: 
     if (filtro === "in" && l.direction !== "in") return false;
     if (filtro === "out" && l.direction !== "out") return false;
     if (filtro === "pending" && l.status !== "pending") return false;
+    if (filtro === "late" && !estaAtrasado(l, dados?.hoje ?? "")) return false;
     if (filtro === "paid" && l.status !== "paid") return false;
     if (categoriaFiltro && (l.account_plan_id ?? "sem") !== categoriaFiltro) return false;
     if (!termo) return true;
@@ -106,6 +118,24 @@ export function Caixa({ mesInicial, mesAtual }: { mesInicial: string; mesAtual: 
     return alvo.includes(termo);
   });
   const totalDoFiltro = resumoDoCaixa(visiveis);
+
+  function confirmarLinha(l: LinhaDoCaixa) {
+    if (l.id) {
+      confirmar.mutate(l.id);
+      return;
+    }
+    if (!l.recurring_entry_id) return;
+    lancarPrevisto.mutate({ recurring_entry_id: l.recurring_entry_id, entry_date: l.entry_date, pagar: true });
+  }
+
+  /** A linha prevista nasce pendente primeiro; o diálogo corrige a linha gravada. */
+  async function corrigirPrevisto(l: LinhaDoCaixa) {
+    if (!l.recurring_entry_id) return;
+    const gravada = await lancarPrevisto
+      .mutateAsync({ recurring_entry_id: l.recurring_entry_id, entry_date: l.entry_date, pagar: false })
+      .catch(() => null);
+    if (gravada) corrigir({ ...l, id: gravada.id, origin: "recurring" });
+  }
 
   function corrigir(l: LinhaDoCaixa) {
     if (!l.id) return;
@@ -222,6 +252,7 @@ export function Caixa({ mesInicial, mesAtual }: { mesInicial: string; mesAtual: 
                     ["in", t("Receitas"), contagem.in],
                     ["out", t("Despesas"), contagem.out],
                     ["pending", t("A confirmar"), contagem.pending],
+                    ["late", t("Atrasados"), contagem.late],
                     ["paid", t("Confirmados"), contagem.paid],
                   ] as const
                 ).map(([id, rotulo, n]) => (
@@ -305,7 +336,7 @@ export function Caixa({ mesInicial, mesAtual }: { mesInicial: string; mesAtual: 
                               ) : null}
                             </td>
                             <td className="py-2">
-                              <Situacao linha={l} />
+                              <Situacao linha={l} hoje={dados.hoje} />
                             </td>
                             <td
                               className={cn(
@@ -317,16 +348,26 @@ export function Caixa({ mesInicial, mesAtual }: { mesInicial: string; mesAtual: 
                               {formatCents(l.amount_cents, l.currency)}
                             </td>
                             <td className="py-2 text-right whitespace-nowrap">
-                              {!previsto && l.status === "pending" ? (
+                              {l.status === "pending" ? (
                                 <IconeDeAcao
                                   rotulo={entrada ? t("Confirmar recebimento") : t("Confirmar pagamento")}
-                                  onClick={() => confirmar.mutate(l.id!)}
+                                  onClick={() => confirmarLinha(l)}
+                                  desabilitado={confirmar.isPending || lancarPrevisto.isPending}
                                   testId="confirmar-lancamento"
                                 >
                                   <Check size={16} />
                                 </IconeDeAcao>
                               ) : null}
-                              {!previsto && (l.origin === "manual" || l.origin === "recurring") ? (
+                              {previsto ? (
+                                <IconeDeAcao
+                                  rotulo={t("Corrigir valor deste mês")}
+                                  onClick={() => void corrigirPrevisto(l)}
+                                  desabilitado={lancarPrevisto.isPending}
+                                  testId="corrigir-lancamento"
+                                >
+                                  <PencilSimple size={16} />
+                                </IconeDeAcao>
+                              ) : l.origin === "manual" || l.origin === "recurring" ? (
                                 <IconeDeAcao rotulo={t("Corrigir")} onClick={() => corrigir(l)} testId="corrigir-lancamento">
                                   <PencilSimple size={16} />
                                 </IconeDeAcao>
@@ -389,7 +430,7 @@ export function Caixa({ mesInicial, mesAtual }: { mesInicial: string; mesAtual: 
   );
 }
 
-function Situacao({ linha }: { linha: LinhaDoCaixa }) {
+export function Situacao({ linha, hoje }: { linha: LinhaDoCaixa; hoje: string }) {
   const t = useT();
   if (linha.id === null) {
     return <span className="text-xs text-text-muted">{t("Previsto")}</span>;
@@ -397,6 +438,14 @@ function Situacao({ linha }: { linha: LinhaDoCaixa }) {
   if (linha.status === "paid") {
     return (
       <span className="text-xs text-success">{linha.direction === "in" ? t("Recebido") : t("Pago")}</span>
+    );
+  }
+  if (estaAtrasado(linha, hoje)) {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs font-medium text-error" data-testid="situacao-atrasado">
+        <span className="size-1.5 rounded-full bg-error" />
+        {t("Atrasado")}
+      </span>
     );
   }
   return (
@@ -407,15 +456,17 @@ function Situacao({ linha }: { linha: LinhaDoCaixa }) {
   );
 }
 
-function IconeDeAcao({
+export function IconeDeAcao({
   rotulo,
   onClick,
   testId,
+  desabilitado = false,
   children,
 }: {
   rotulo: string;
   onClick: () => void;
   testId: string;
+  desabilitado?: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -425,7 +476,8 @@ function IconeDeAcao({
       title={rotulo}
       data-testid={testId}
       onClick={onClick}
-      className="ml-1 inline-flex rounded-md p-1.5 text-text-muted hover:bg-surface-elevated hover:text-text"
+      disabled={desabilitado}
+      className="ml-1 inline-flex rounded-md p-1.5 text-text-muted hover:bg-surface-elevated hover:text-text disabled:opacity-50"
     >
       {children}
     </button>
