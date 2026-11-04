@@ -91,8 +91,13 @@ export function useArquivarFunil() {
     // `definitivo` só é aceito pelo caso limpo (funil que nunca recebeu negócio,
     // sem formulário e sem automação apontando para ele); no resto a rota recusa
     // com a explicação, e a tela a mostra.
-    mutationFn: ({ id, definitivo }: { id: string; definitivo?: boolean }) =>
-      apiClient.delete<Resposta>(definitivo ? `${doFunil(id)}?definitivo=1` : doFunil(id)),
+    //
+    // `comNegocios` (fork Konnexo): só para funil JÁ arquivado — apaga os
+    // negócios dele junto, numa ação que a pessoa confirma marcando a caixa.
+    mutationFn: ({ id, definitivo, comNegocios }: { id: string; definitivo?: boolean; comNegocios?: boolean }) =>
+      apiClient.delete<Resposta>(
+        definitivo ? `${doFunil(id)}?definitivo=1${comNegocios ? "&com_negocios=1" : ""}` : doFunil(id),
+      ),
     onSettled: reler,
   });
 }

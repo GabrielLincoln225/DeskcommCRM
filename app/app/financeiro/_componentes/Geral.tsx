@@ -340,7 +340,7 @@ function Historico({ historico, moeda }: { historico: MesDoHistorico[]; moeda: s
                   const resultado = m.entradas_cents - m.saidas_cents;
                   return (
                     <tr key={m.mes} className="border-t border-border/60">
-                      <td className="py-1 capitalize">{rotulo(m.mes)}</td>
+                      <td className="py-1">{rotulo(m.mes)}</td>
                       <td className="py-1 text-right text-success tabular-nums">+{formatCents(m.entradas_cents, moeda)}</td>
                       <td className="py-1 text-right tabular-nums">−{formatCents(m.saidas_cents, moeda)}</td>
                       <td className={cn("py-1 text-right tabular-nums", resultado < 0 && "text-error")}>

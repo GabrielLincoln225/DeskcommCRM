@@ -151,6 +151,8 @@ export function FunisClient({
   const [renomeando, setRenomeando] = useState<{ id: string; nome: string } | null>(null);
   const [arquivando, setArquivando] = useState<{ id: string; erro: string | null } | null>(null);
   const [excluindo, setExcluindo] = useState<{ id: string; erro: string | null } | null>(null);
+  /** "Apagar também os negócios" — marcada, a exclusão do arquivado leva os negócios junto. */
+  const [comNegocios, setComNegocios] = useState(false);
   const [arquivoAberto, setArquivoAberto] = useState(false);
   const [erro, setErro] = useState<{ id: string | null; texto: string } | null>(null);
 
@@ -222,7 +224,7 @@ export function FunisClient({
   function excluirDoArquivo(id: string) {
     setErro(null);
     arquivar.mutate(
-      { id, definitivo: true },
+      comNegocios ? { id, definitivo: true, comNegocios: true } : { id, definitivo: true },
       {
         onSuccess: (r) => {
           aplicarResposta(r);
@@ -346,6 +348,7 @@ export function FunisClient({
                         size="sm"
                         onClick={() => {
                           setErro(null);
+                          setComNegocios(false);
                           setExcluindo({ id: funil.id, erro: null });
                         }}
                         disabled={ocupado}
@@ -394,6 +397,25 @@ export function FunisClient({
                           )}
                         </AlertDialogDescription>
                       </AlertDialogHeader>
+
+                      {/* Fork Konnexo: a saída para o funil arquivado que tem
+                          negócio dentro. Desmarcada por padrão — apagar negócio
+                          é escolha explícita, nunca o caminho de quem só clicou. */}
+                      <label className="flex items-start gap-2 text-sm leading-relaxed">
+                        <input
+                          type="checkbox"
+                          className="mt-1"
+                          checked={comNegocios}
+                          onChange={(e) => setComNegocios(e.target.checked)}
+                          disabled={ocupado}
+                          data-testid={`excluir-com-negocios-${funil.id}`}
+                        />
+                        <span>
+                          {t(
+                            "Apagar também todos os negócios deste funil. Os contatos continuam na agenda; só os negócios e o histórico deles somem.",
+                          )}
+                        </span>
+                      </label>
 
                       {excluindoAqui?.erro && (
                         // A recusa da rota, INTEIRA: é ela que diz quantos

@@ -9861,5 +9861,8 @@
   "Financeiro geral": "Finance overview",
   "O caixa de todos os tempos: o que entrou, o que saiu, o que está em aberto e o que atrasou.": "All-time cash: what came in, what went out, what is open and what is overdue.",
   "Painel do mês": "Monthly dashboard",
-  "O caixa de todos os tempos: saldo, em aberto, atrasados e os próximos vencimentos.": "All-time cash: balance, open items, overdue and upcoming due dates."
+  "O caixa de todos os tempos: saldo, em aberto, atrasados e os próximos vencimentos.": "All-time cash: balance, open items, overdue and upcoming due dates.",
+  "Arquive o funil antes de excluí-lo junto com os negócios.": "Archive the pipeline before deleting it together with its deals.",
+  "Algum negócio deste funil está ligado a outro registro (proposta, lançamento no caixa…) e não pode ser apagado. Abra o funil e resolva esse negócio antes.": "A deal in this pipeline is linked to another record (proposal, cash entry…) and cannot be deleted. Open the pipeline and resolve that deal first.",
+  "Apagar também todos os negócios deste funil. Os contatos continuam na agenda; só os negócios e o histórico deles somem.": "Also delete every deal in this pipeline. Contacts stay in your contact list; only the deals and their history are removed."
 }

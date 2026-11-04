@@ -148,6 +148,22 @@ describe("gaveta do arquivo (#979)", () => {
     expect(arquivar).toHaveBeenCalledWith({ id: "f-arq", definitivo: true }, expect.anything());
   });
 
+  it("«Apagar também os negócios» marcado manda comNegocios: true (fork Konnexo)", async () => {
+    const user = userEvent.setup();
+    tela();
+    await user.click(screen.getByTestId("arquivados-abrir"));
+    await user.click(screen.getByTestId("excluir-arquivado-f-arq"));
+
+    const caixa = screen.getByTestId("excluir-com-negocios-f-arq");
+    expect(caixa).not.toBeChecked();
+    await user.click(caixa);
+    await user.click(screen.getByTestId("excluir-confirmar-f-arq"));
+    expect(arquivar).toHaveBeenCalledWith(
+      { id: "f-arq", definitivo: true, comNegocios: true },
+      expect.anything(),
+    );
+  });
+
   it("sem nada arquivado não há gaveta — gaveta vazia é ruído permanente", () => {
     tela({ arquivados: [] });
     expect(screen.queryByTestId("arquivados")).not.toBeInTheDocument();

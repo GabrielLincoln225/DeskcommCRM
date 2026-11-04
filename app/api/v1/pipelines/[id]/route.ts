@@ -326,6 +326,12 @@ export async function DELETE(req: NextRequest, ctx: RouteCtx): Promise<Response>
 
   const { id: pipelineId } = await ctx.params;
   const definitivo = req.nextUrl.searchParams.get("definitivo") === "1";
+  // Fork Konnexo: "excluir de vez COM os negócios". Só vale para funil que JÁ
+  // está no arquivo — arquivar primeiro é o passo que tira o funil da operação,
+  // e a exclusão com negócios é a limpeza depois disso, nunca um atalho na
+  // lista viva. As outras recusas (funil padrão, formulário, automação) seguem
+  // de pé: só a contagem de negócios deixa de barrar.
+  const comNegocios = definitivo && req.nextUrl.searchParams.get("com_negocios") === "1";
 
   const supabase = await createClient();
 
@@ -345,9 +351,20 @@ export async function DELETE(req: NextRequest, ctx: RouteCtx): Promise<Response>
     return fail("internal_error", (err as Error).message, 500, { requestId });
   }
 
-  const veredito = definitivo
-    ? podeExcluirDeVez(funis, pipelineId, deps)
-    : validarArquivamento(funis, pipelineId, deps);
+  if (comNegocios && !alvo.is_archived) {
+    return fail(
+      "unprocessable_entity",
+      t("Arquive o funil antes de excluí-lo junto com os negócios."),
+      422,
+      { requestId },
+    );
+  }
+
+  const veredito = comNegocios
+    ? validarArquivamento(funis, pipelineId, deps)
+    : definitivo
+      ? podeExcluirDeVez(funis, pipelineId, deps)
+      : validarArquivamento(funis, pipelineId, deps);
   if (!veredito.ok) {
     // A CONTAGEM VAI EM `details`, não só dentro da frase: a tela mostra "este
     // funil tem N negócios" sem precisar extrair o número da mensagem com regex —
@@ -366,6 +383,32 @@ export async function DELETE(req: NextRequest, ctx: RouteCtx): Promise<Response>
         automacoes: deps.regrasAtivas,
       },
     });
+  }
+
+  // Os negócios saem ANTES do funil: `crm_leads.pipeline_id` e `stage_id` são
+  // RESTRICT, então o funil com negócio dentro não se apaga. É o mesmo DELETE
+  // real da exclusão em lote do quadro (`/api/v1/leads/bulk`, action delete):
+  // o contato fica, só o negócio sai.
+  let negociosExcluidos = 0;
+  if (comNegocios && deps.negocios > 0) {
+    const { data: apagados, error: erroNegocios } = await supabase
+      .from("crm_leads")
+      .delete()
+      .eq("organization_id", orgId)
+      .eq("pipeline_id", pipelineId)
+      .select("id");
+    if (erroNegocios) {
+      if ((erroNegocios as { code?: string }).code === "23503") {
+        return fail(
+          "state_conflict",
+          t("Algum negócio deste funil está ligado a outro registro (proposta, lançamento no caixa…) e não pode ser apagado. Abra o funil e resolva esse negócio antes."),
+          409,
+          { requestId },
+        );
+      }
+      return fail("internal_error", erroNegocios.message, 500, { requestId });
+    }
+    negociosExcluidos = apagados?.length ?? 0;
   }
 
   const { error } = definitivo
@@ -389,7 +432,7 @@ export async function DELETE(req: NextRequest, ctx: RouteCtx): Promise<Response>
     resourceType: "crm_pipeline",
     resourceId: pipelineId,
     requestId,
-    metadata: { name: alvo.name, slug: alvo.slug, negocios: deps.negocios },
+    metadata: { name: alvo.name, slug: alvo.slug, negocios: deps.negocios, negocios_excluidos: negociosExcluidos },
   });
 
   try {
