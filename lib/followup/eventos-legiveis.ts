@@ -139,6 +139,7 @@ const TIPO_DO_NO: Record<FlowNode["type"], string> = {
   // #2065 — as duas ações que também não falam com o cliente.
   move_lead: "Mover no funil",
   edit_lead_tag: "Editar tag",
+  notify_team: "Avisar a equipe",
   end: "Fim",
 };
 
@@ -216,6 +217,8 @@ export function resumoDoNo(node: FlowNode): NoDoDossie {
           ? `grava a(s) tag(s) ${node.config.tags.join(", ")} no lead — sem mensagem ao cliente`
           : "grava tag no lead, ainda sem destino escolhido — sem mensagem ao cliente",
       };
+    case "notify_team":
+      return { ...base, resumo: "avisa a equipe no WhatsApp cadastrado em Avisos — sem mensagem ao cliente" };
     case "end":
       return { ...base, resumo: `encerra — ${DESFECHO[node.config.outcome] ?? node.config.outcome}` };
   }

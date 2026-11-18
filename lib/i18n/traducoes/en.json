@@ -9882,5 +9882,9 @@
   "Valor certo": "Fixed amount",
   "Valor variável": "Variable amount",
   "Fica em aberto com este valor estimado. Quando você pagar (ou no fim do mês), confirma no ✓ e digita quanto foi de verdade.": "Stays open with this estimated amount. When you pay (or at the end of the month), confirm with ✓ and enter how much it actually was.",
-  "Cada mês nasce em aberto com a estimativa; ao confirmar, você digita quanto foi naquele mês.": "Each month starts open with the estimate; when confirming, you enter how much it was that month."
+  "Cada mês nasce em aberto com a estimativa; ao confirmar, você digita quanto foi naquele mês.": "Each month starts open with the estimate; when confirming, you enter how much it was that month.",
+  "Avisar a equipe no WhatsApp": "Notify the team on WhatsApp",
+  "WhatsApp de Avisos · sem mensagem ao cliente": "Alerts WhatsApp · no message to the customer",
+  "Manda para o WhatsApp cadastrado em Avisos (Casos › Aviso no WhatsApp) o nome do cliente, o telefone e o link do negócio. O cliente não recebe nada.": "Sends the customer's name, phone and the deal link to the WhatsApp registered in Alerts (Cases › WhatsApp alert). The customer receives nothing.",
+  "O título desta caixa aparece no aviso, então escreva o motivo (ex.: Cliente respondeu o follow-up).": "This box's title shows up in the alert, so write the reason (e.g. Customer replied to the follow-up)."
 }

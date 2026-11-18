@@ -968,6 +968,15 @@ export function processNode(input: {
       return { kind: "advance", next_node_id: edge.target, next_eval_at: clock() };
     }
 
+    case "notify_team": {
+      // Fork Konnexo — mesma passagem do `edit_lead_tag`: o aviso à equipe sai
+      // no motor, depois do evento do passo, com a MESMA trava. Não fala com o
+      // cliente (por isso não está em `NOS_QUE_ENVIAM`).
+      const edge = selectEdge(edges, node.id, { type: "always" });
+      if (!edge) return { kind: "fail", error: `notify_team node "${node.id}" has no outbound edge` };
+      return { kind: "advance", next_node_id: edge.target, next_eval_at: clock() };
+    }
+
     case "end": {
       if (node.config.outcome === "custom") {
         return { kind: "complete", outcome: null, cancel_reason: node.config.note };

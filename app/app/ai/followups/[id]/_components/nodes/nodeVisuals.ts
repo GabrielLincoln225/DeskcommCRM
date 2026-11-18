@@ -1,6 +1,6 @@
 import type { ComponentType } from "react";
 
-import { Bell, Play, Clock, GitBranch, Brain, ChatCircle, ArrowsClockwise, PaperPlaneTilt, Flag, Question, PuzzlePiece, Funnel, Tag } from "@/lib/ui/icons";
+import { Bell, Play, Clock, GitBranch, Brain, ChatCircle, ArrowsClockwise, PaperPlaneTilt, Flag, Question, PuzzlePiece, Funnel, Tag, UsersThree } from "@/lib/ui/icons";
 import type { FlowNode, NodeType } from "@/lib/followup/graph-schema";
 import { RESULTADOS_DO_FIM } from "@/lib/followup/vocabulario";
 import { NOS_DA_SUPERFICIE } from "@/lib/followup/validate-publish";
@@ -187,6 +187,16 @@ export const NODE_VISUALS: Record<NodeType, NodeVisual> = {
     defaultLabel: "Gravar tag no lead",
     defaultConfig: () => ({ tags: [] }),
   },
+  // Fork Konnexo — avisa a equipe no WhatsApp de Avisos (a ação `notify_team`).
+  notify_team: {
+    type: "notify_team",
+    paletteLabel: "Avisar a equipe",
+    icon: UsersThree,
+    chipClassName: "bg-warning-bg text-warning-fg",
+    borderClassName: "border-l-warning",
+    defaultLabel: "Avisar a equipe no WhatsApp",
+    defaultConfig: () => ({}),
+  },
   end: {
     type: "end",
     paletteLabel: "Fim",
@@ -297,6 +307,8 @@ export function describeNodeConfig(
       const c = config as ConfigOf<"edit_lead_tag">;
       return c.tags.length ? c.tags.join(", ") : t("sem tag escolhida");
     }
+    case "notify_team":
+      return t("WhatsApp de Avisos · sem mensagem ao cliente");
     case "end": {
       const c = config as ConfigOf<"end">;
       return t(RESULTADOS_DO_FIM[c.outcome]);

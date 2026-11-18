@@ -171,6 +171,17 @@ export function NodeConfigPanel({
             onChange={(config) => onChange({ config })}
           />
         )}
+        {/* Fork Konnexo — não há o que escolher: o destino é o número de Avisos. */}
+        {type === "notify_team" && (
+          <div className="space-y-2 text-sm text-muted-foreground" data-testid="notify-team-explicacao">
+            <p>
+              {t(
+                "Manda para o WhatsApp cadastrado em Avisos (Casos › Aviso no WhatsApp) o nome do cliente, o telefone e o link do negócio. O cliente não recebe nada.",
+              )}
+            </p>
+            <p>{t("O título desta caixa aparece no aviso, então escreva o motivo (ex.: Cliente respondeu o follow-up).")}</p>
+          </div>
+        )}
         {type === "end" && (
           <EndForm
             config={node.data.config as ConfigOf<"end">}

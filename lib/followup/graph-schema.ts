@@ -30,6 +30,9 @@ export const NODE_TYPES = [
   // fora desta fatia e é o passo seguinte da issue.
   'move_lead',
   'edit_lead_tag',
+  // Fork Konnexo: avisa a EQUIPE no WhatsApp cadastrado em Avisos — a MESMA ação
+  // `notify_team` das automações. Não fala com o cliente.
+  'notify_team',
   'end',
 ] as const;
 export type NodeType = (typeof NODE_TYPES)[number];
@@ -355,6 +358,14 @@ export const moveLeadConfigSchema = z.strictObject({
  * publish recusa (`tag_ausente`) — um nó que não grava nada não pode ser
  * publicado como se gravasse.
  */
+/**
+ * Nó `notify_team` (fork Konnexo): manda o resumo do negócio para o WhatsApp
+ * da equipe (Avisos), pela mesma ação `notify_team` das automações. Sem
+ * destinatário na caixa — o destino é o que o admin cadastrou, pela mesma
+ * disciplina anti-spam da ação. O título da caixa vai na linha "Regra" do aviso.
+ */
+export const notifyTeamNodeConfigSchema = z.strictObject({});
+
 export const editLeadTagConfigSchema = z.strictObject({
   tags: z
     .array(z.string().max(60, "Tag muito longa: máximo de 60 caracteres."))
@@ -681,6 +692,17 @@ export const flowNodeSchema = z.discriminatedUnion('type', [
       y: z.number(),
     }),
     config: editLeadTagConfigSchema,
+  }),
+  // Nó de ação (fork Konnexo): avisa a equipe no WhatsApp, sem mensagem ao cliente
+  z.strictObject({
+    id: z.string().min(1),
+    type: z.literal('notify_team'),
+    label: z.string().min(1).max(60),
+    position: z.strictObject({
+      x: z.number(),
+      y: z.number(),
+    }),
+    config: notifyTeamNodeConfigSchema,
   }),
   // End node: terminal state
   z.strictObject({

@@ -276,8 +276,8 @@ function cicloDoEncadeamento(
  * recusava em silêncio; a recusa aqui é o erro que a pessoa lê no editor.
  */
 export const NOS_DA_SUPERFICIE: Record<FollowupFlowSurface, readonly NodeType[]> = {
-  followup: ['trigger', 'wait', 'condition', 'ai_classify', 'match_reply', 'repeat', 'action', 'internal_task', 'move_lead', 'edit_lead_tag', 'end'],
-  crm_automation: ['trigger', 'wait', 'condition', 'ai_classify', 'match_reply', 'repeat', 'action', 'internal_task', 'move_lead', 'edit_lead_tag', 'end'],
+  followup: ['trigger', 'wait', 'condition', 'ai_classify', 'match_reply', 'repeat', 'action', 'internal_task', 'move_lead', 'edit_lead_tag', 'notify_team', 'end'],
+  crm_automation: ['trigger', 'wait', 'condition', 'ai_classify', 'match_reply', 'repeat', 'action', 'internal_task', 'move_lead', 'edit_lead_tag', 'notify_team', 'end'],
   atendimento: ['trigger', 'collect', 'skill', 'end'],
 };
 
@@ -429,6 +429,7 @@ export const CONTA_NO_TETO: Record<NodeType, boolean> = {
   internal_task: false, // lembrete para a equipe
   move_lead: false, // move o card no funil
   edit_lead_tag: false, // grava tag no lead
+  notify_team: false, // avisa a equipe no WhatsApp (fork Konnexo)
   end: false, // desfecho
 };
 

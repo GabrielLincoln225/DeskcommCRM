@@ -65,6 +65,8 @@ import { getAction } from "@/lib/automation/actions";
 // Efeito de import: registra a ação `add_tag` no MESMO mapa que o motor de
 // automação usa. A tag do follow-up é a tag da automação — não uma segunda.
 import "@/lib/automation/actions/add-tag";
+// Fork Konnexo: o nó `notify_team` usa a MESMA ação das automações.
+import "@/lib/automation/actions/notify-team";
 import { renderizarTextoDeFollowup } from "@/lib/automation/texto-do-followup";
 import type { EventRow } from "@/lib/event-log/dispatcher";
 import { quandoDoRetornoVivo, reavaliarDepoisDoRetorno } from "./retorno-segura-o-fluxo";
@@ -241,6 +243,19 @@ export interface AdminClient {
     contact_id: string;
     enrollment_id: string;
     config: Extract<FlowNode, { type: "edit_lead_tag" }>["config"];
+  }): Promise<void>;
+  /**
+   * Nó `notify_team` (fork Konnexo): avisa a equipe no WhatsApp de Avisos pela
+   * MESMA ação `notify_team` das automações. Opcional pelas mesmas razões dos
+   * nós acima — omitida, o nó avança sem avisar.
+   */
+  avisarEquipe?(item: {
+    organization_id: string;
+    contact_id: string;
+    enrollment_id: string;
+    pointer_id: string;
+    /** O título da caixa — vai na linha "Regra" do aviso. */
+    rotulo: string;
   }): Promise<void>;
   /**
    * Régua de recuperação de falta esgotada sem resposta — abre um item na
@@ -755,6 +770,27 @@ async function applyResult(
       });
     } catch (err) {
       logger.warn("followup_edit_lead_tag_failed", {
+        organization_id: enrollment.organization_id,
+        enrollment_id: enrollment.id,
+        node_id: node.id,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+
+  // Fork Konnexo — `notify_team`: mesma trava (evento do passo gravado antes,
+  // `isReplay` impede o segundo aviso) e mesma regra de falha (não reverte o avanço).
+  if (result.kind === "advance" && !isReplay && node.type === "notify_team") {
+    try {
+      await db.avisarEquipe?.({
+        organization_id: enrollment.organization_id,
+        contact_id: enrollment.contact_id,
+        enrollment_id: enrollment.id,
+        pointer_id: enrollment.pointer_id,
+        rotulo: node.label,
+      });
+    } catch (err) {
+      logger.warn("followup_notify_team_failed", {
         organization_id: enrollment.organization_id,
         enrollment_id: enrollment.id,
         node_id: node.id,
@@ -1683,6 +1719,69 @@ export function createSupabaseAdminClient(admin: SupabaseClient): AdminClient {
       );
       if (resultado.status === "failed") {
         throw new Error(resultado.error ?? "add_tag_failed");
+      }
+    },
+    /**
+     * Fork Konnexo — nó `notify_team`: a MESMA ação `notify_team` das
+     * automações, pelo MESMO registro (`getAction`). Destino, checagem do canal,
+     * pacing e o resumo saem de lá; aqui só resolvemos o negócio e o contato da
+     * inscrição. Sem negócio a ação devolve `sem_negocio_no_evento` (skipped) —
+     * registrado no warn, nunca aviso sem atalho.
+     */
+    async avisarEquipe(item) {
+      const { data: lead, error } = await admin
+        .from("crm_leads")
+        .select("*")
+        .eq("organization_id", item.organization_id)
+        .eq("contact_id", item.contact_id)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      const { data: contato, error: contatoErr } = await admin
+        .from("contacts")
+        .select("*")
+        .eq("organization_id", item.organization_id)
+        .eq("id", item.contact_id)
+        .maybeSingle();
+      if (contatoErr) throw new Error(contatoErr.message);
+
+      const context: Record<string, unknown> = {};
+      if (lead) context.lead = lead;
+      if (contato) context.contact = contato;
+
+      const { data: ponteiro } = await admin
+        .from("followup_flow_pointers")
+        .select("name")
+        .eq("organization_id", item.organization_id)
+        .eq("id", item.pointer_id)
+        .maybeSingle();
+      const fluxo = (ponteiro as { name?: string } | null)?.name?.trim();
+      const regra = fluxo ? `${fluxo} · ${item.rotulo}` : item.rotulo;
+
+      const acao = getAction("notify_team");
+      if (!acao) throw new Error("notify_team_nao_registrada");
+      const resultado = await acao.execute(
+        {
+          admin,
+          organizationId: item.organization_id,
+          ruleId: "",
+          ruleName: regra,
+          event: {} as EventRow,
+          context,
+          requestId: `followup:${item.enrollment_id}`,
+        },
+        { canal: "whatsapp" },
+      );
+      if (resultado.status === "failed") {
+        throw new Error(resultado.error ?? String(resultado.detail?.reason ?? "notify_team_failed"));
+      }
+      if (resultado.status === "skipped") {
+        logger.warn("followup_notify_team_skipped", {
+          organization_id: item.organization_id,
+          enrollment_id: item.enrollment_id,
+          motivo: resultado.detail?.reason ?? null,
+        });
       }
     },
     async abrirAvisoRecuperacaoEsgotada(item) {
