@@ -120,7 +120,13 @@ export function useCorrigirLancamento() {
 export function useConfirmarLancamento() {
   const invalidar = useInvalidarFinanceiro();
   return useMutation({
-    mutationFn: (id: string) => apiClient.patch(`/api/v1/financeiro/lancamentos/${id}`, { pay: true }),
+    // `amount_cents` é o valor real da conta variável (9004), gravado na mesma
+    // escrita que paga.
+    mutationFn: ({ id, amount_cents }: { id: string; amount_cents?: number }) =>
+      apiClient.patch(`/api/v1/financeiro/lancamentos/${id}`, {
+        pay: true,
+        ...(amount_cents === undefined ? {} : { amount_cents }),
+      }),
     onSuccess: invalidar,
     onError: showApiError,
   });
@@ -133,7 +139,7 @@ export function useConfirmarLancamento() {
 export function useLancarPrevisto() {
   const invalidar = useInvalidarFinanceiro();
   return useMutation({
-    mutationFn: async (corpo: { recurring_entry_id: string; entry_date: string; pagar: boolean }) =>
+    mutationFn: async (corpo: { recurring_entry_id: string; entry_date: string; pagar: boolean; amount_cents?: number }) =>
       (await apiClient.post<{ data: { id: string; status: string } }>("/api/v1/financeiro/previstos", corpo)).data,
     onSuccess: invalidar,
     onError: showApiError,

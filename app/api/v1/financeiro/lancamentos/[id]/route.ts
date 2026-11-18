@@ -7,6 +7,12 @@
  * direção de um pago são barrados pelo gatilho abaixo. A rota recusa antes, com
  * a frase certa.
  *
+ * ⚠️ PAGAR PODE TRAZER O VALOR REAL (9004, fork Konnexo). A conta variável
+ * (anúncio, comissão) fica aberta com uma estimativa; o confirmar manda
+ * `{ pay: true, amount_cents }` e o valor muda NA MESMA escrita que paga —
+ * nunca depois, porque depois de pago o gatilho barra. Pagar sempre zera a
+ * marca de estimativa: o que foi pago é dinheiro que passou.
+ *
  * ⚠️ PAGO É IMUTÁVEL, e quem garante isso é o TRIGGER
  * `fn_lancamento_pago_e_imutavel`, não esta rota. As checagens aqui existem para
  * a recusa chegar com nome e em português; se alguém contornar a rota, o banco
@@ -39,6 +45,8 @@ type Ctx = { params: Promise<{ id: string }> };
 const pagarSchema = z.object({
   /** Pendente vira pago. Nunca o contrário. */
   pay: z.literal(true),
+  /** O valor real, para quem confirma uma conta variável. */
+  amount_cents: z.number().int().min(1).max(1_000_000_000).optional(),
 });
 
 const corrigirSchema = z
@@ -96,9 +104,25 @@ export async function PATCH(req: NextRequest, ctx: Ctx): Promise<Response> {
     return ok({ id, status: "paid", ja_pago: true }, { requestId });
   }
 
+  const valorReal = lido.data.amount_cents;
+  if (valorReal !== undefined && atual.origin !== "manual" && atual.origin !== "recurring") {
+    return fail(
+      "state_conflict",
+      "Este lançamento veio de uma comanda; o valor dele é o da comanda.",
+      409,
+      { requestId },
+    );
+  }
+
   const { error } = await supabase
     .from("financial_entries")
-    .update({ status: "paid", paid_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .update({
+      status: "paid",
+      paid_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      amount_is_estimate: false,
+      ...(valorReal !== undefined ? { amount_cents: valorReal } : {}),
+    })
     .eq("id", id);
   if (error) return fail("internal_error", error.message, 500, { requestId });
 
@@ -107,7 +131,13 @@ export async function PATCH(req: NextRequest, ctx: Ctx): Promise<Response> {
     resourceType: "financial_entry",
     resourceId: id,
     requestId,
-    metadata: { amount_cents: atual.amount_cents, direction: atual.direction },
+    metadata: {
+      amount_cents: valorReal ?? atual.amount_cents,
+      direction: atual.direction,
+      ...(valorReal !== undefined && valorReal !== atual.amount_cents
+        ? { valor_estimado_cents: atual.amount_cents }
+        : {}),
+    },
   });
 
   return ok({ id, status: "paid" }, { requestId });

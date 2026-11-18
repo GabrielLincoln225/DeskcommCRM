@@ -64,7 +64,7 @@ export async function GET(): Promise<Response> {
 
   const { data: moldesBrutos, error: erroMoldes } = await supabase
     .from("recurring_entries")
-    .select("id, name, direction, amount_cents, currency, day_of_month, account_plan_id, contact_id, starts_on")
+    .select("id, name, direction, amount_cents, currency, day_of_month, account_plan_id, contact_id, starts_on, is_variable")
     .eq("organization_id", orgId)
     .eq("is_active", true);
   if (erroMoldes) return fail("internal_error", erroMoldes.message, 500, { requestId });

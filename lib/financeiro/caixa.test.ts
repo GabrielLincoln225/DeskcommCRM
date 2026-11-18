@@ -108,6 +108,14 @@ describe("previstosDoMes", () => {
     expect(p[0]).toMatchObject({ id: null, origin: "previsto", entry_date: "2026-10-20", status: "pending" });
   });
 
+  it("molde variável (9004) prevê a competência como estimativa; o de valor certo, não", () => {
+    const variavel = molde({ day_of_month: 30, is_variable: true, amount_cents: 30_000 });
+    const certo = molde({ day_of_month: 30 });
+    const [a, b] = previstosDoMes([variavel, certo], [], "2026-11", "2026-11-18");
+    expect(a).toMatchObject({ amount_cents: 30_000, amount_is_estimate: true });
+    expect(b?.amount_is_estimate).toBe(false);
+  });
+
   it("não prevê o passado: competência que já venceu e não está no banco não é previsão", () => {
     const m = molde({ day_of_month: 8 });
     expect(previstosDoMes([m], [], "2026-10", "2026-10-09")).toEqual([]);

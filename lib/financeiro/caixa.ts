@@ -43,6 +43,13 @@ export interface LinhaDoCaixa {
   contact_id: string | null;
   lead_id: string | null;
   recurring_entry_id: string | null;
+  /**
+   * O valor é uma ESTIMATIVA (9004, fork Konnexo): conta variável — anúncio,
+   * comissão — que fica em aberto e recebe o valor real ao ser confirmada.
+   * Opcional porque linha antiga e teste podem não trazer a coluna; ausente é
+   * `false`.
+   */
+  amount_is_estimate?: boolean;
 }
 
 export interface MoldeRecorrente {
@@ -55,6 +62,8 @@ export interface MoldeRecorrente {
   account_plan_id: string | null;
   contact_id: string | null;
   starts_on: string | null;
+  /** Molde de valor variável (9004): cada competência nasce como estimativa. */
+  is_variable?: boolean;
 }
 
 /** "2026-10" → primeiro e último dia do mês, como datas ISO. */
@@ -117,6 +126,7 @@ export function previstosDoMes(
       contact_id: molde.contact_id,
       lead_id: null,
       recurring_entry_id: molde.id,
+      amount_is_estimate: molde.is_variable === true,
     });
   }
   return saida;

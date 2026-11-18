@@ -26,12 +26,11 @@ import { ArrowDownRight, ArrowUpRight, CashRegister, Check } from "@/lib/ui/icon
 import { cn } from "@/lib/utils";
 
 import { IconeDeAcao, Situacao } from "./Caixa";
+import { useConfirmarLinha } from "./ConfirmarValor";
 import {
   dataCurta,
   nomeDoMes,
-  useConfirmarLancamento,
   useGeral,
-  useLancarPrevisto,
   type ContatoDoCaixa,
 } from "./dados";
 import { DespesasPorCategoria } from "./Graficos";
@@ -43,8 +42,7 @@ export function Geral() {
   const t = useT();
   const tag = useTagDeIdioma();
   const geral = useGeral();
-  const confirmar = useConfirmarLancamento();
-  const lancarPrevisto = useLancarPrevisto();
+  const { confirmarLinha, ocupado, dialogo: dialogoDoValor } = useConfirmarLinha();
   const dados = geral.data;
 
   const contatoPorId = useMemo(
@@ -60,14 +58,6 @@ export function Geral() {
   const r = dados.resumo;
   const moeda = dados.moeda;
   const hoje = dados.hoje;
-  const ocupado = confirmar.isPending || lancarPrevisto.isPending;
-
-  function confirmarLinha(l: LinhaDoCaixa) {
-    if (l.id) confirmar.mutate(l.id);
-    else if (l.recurring_entry_id) {
-      lancarPrevisto.mutate({ recurring_entry_id: l.recurring_entry_id, entry_date: l.entry_date, pagar: true });
-    }
-  }
 
   function lista(linhas: LinhaDoCaixa[], vazio: string, testId: string) {
     if (linhas.length === 0) return <p className="text-sm text-text-muted">{vazio}</p>;
@@ -98,7 +88,7 @@ export function Geral() {
               <div className="flex items-center gap-2">
                 <Situacao linha={l} hoje={hoje} />
                 <span className={cn("text-sm font-medium tabular-nums", entrada ? "text-success" : "text-text")}>
-                  {entrada ? "+ " : "− "}
+                  {l.amount_is_estimate && l.status === "pending" ? "≈ " : entrada ? "+ " : "− "}
                   {formatCents(l.amount_cents, l.currency)}
                 </span>
                 <IconeDeAcao
@@ -121,6 +111,7 @@ export function Geral() {
 
   return (
     <div className="flex flex-col gap-4">
+      {dialogoDoValor}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-text-muted">
           {desde

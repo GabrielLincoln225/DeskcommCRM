@@ -54,6 +54,12 @@ const criarSchema = z.object({
   lead_id: z.string().uuid().nullish(),
   /** `mensal` cria também o molde recorrente que começa nesta data. */
   repetir: z.enum(["unico", "mensal"]).default("unico"),
+  /**
+   * Valor variável (9004, fork Konnexo): `amount_cents` é uma estimativa. O
+   * lançamento nasce SEMPRE pendente — estimativa paga não existe — e o
+   * confirmar pede o valor real. Com `mensal`, o molde inteiro é variável.
+   */
+  valor_variavel: z.boolean().default(false),
 });
 
 /** O nome do molde é a descrição do lançamento, no limite que o catálogo aceita. */
@@ -104,6 +110,8 @@ export async function POST(req: NextRequest): Promise<Response> {
   }
 
   const mensal = lido.data.repetir === "mensal";
+  const variavel = lido.data.valor_variavel;
+  const status = variavel ? "pending" : lido.data.status;
   if (mensal && ROLE_RANK[authz.org.role] < ROLE_RANK.manager) {
     return fail("forbidden_role", "Lançamento mensal cria uma recorrência, e isso exige gestor.", 403, {
       requestId,
@@ -137,6 +145,7 @@ export async function POST(req: NextRequest): Promise<Response> {
         currency: moeda,
         day_of_month: Number(lido.data.entry_date.slice(8, 10)),
         starts_on: lido.data.entry_date,
+        is_variable: variavel,
         created_by_user_id: authz.user.id,
       })
       .select("id")
@@ -163,12 +172,13 @@ export async function POST(req: NextRequest): Promise<Response> {
       amount_cents: lido.data.amount_cents,
       description: lido.data.description,
       entry_date: lido.data.entry_date,
-      status: lido.data.status,
+      status,
+      amount_is_estimate: variavel,
       // Nasce pago só se quem lançou disse que já pagou. `paid_at` acompanha o
       // status e não vem do corpo: uma data de pagamento que não corresponde ao
       // status é a linha que faz o relatório e o extrato contarem histórias
       // diferentes.
-      paid_at: lido.data.status === "paid" ? new Date().toISOString() : null,
+      paid_at: status === "paid" ? new Date().toISOString() : null,
       // A primeira competência de um molde é `recurring` como as que o cron
       // gera depois: é a mesma série, e o extrato a mostra igual.
       origin: moldeId ? "recurring" : "manual",
@@ -205,6 +215,7 @@ export async function POST(req: NextRequest): Promise<Response> {
       amount_cents: data.amount_cents,
       status: data.status,
       mensal,
+      valor_variavel: variavel,
       recurring_entry_id: data.recurring_entry_id,
       lead_id: lido.data.lead_id ?? null,
     },

@@ -20,6 +20,11 @@
  * clicou duas vezes), não é erro: com `pagar` a linha pendente é paga; paga já
  * estava, devolve o mesmo desfecho.
  *
+ * ⚠️ VALOR REAL DA CONTA VARIÁVEL (9004, fork Konnexo). `amount_cents` no corpo
+ * substitui o valor do molde NESTA competência — é o "quanto foi" do anúncio
+ * do mês. Sem ele, vale o do molde (a estimativa, no molde variável). Linha
+ * paga nunca fica marcada como estimativa.
+ *
  * ⚠️ CLIENT DE SESSÃO. A RLS diz que escrever lançamento exige `agent` e ler
  * molde exige ser da organização; a rota cobra o mesmo degrau do PATCH de pagar.
  */
@@ -42,6 +47,8 @@ const lancarSchema = z.object({
   entry_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida."),
   /** `true` = já foi recebido/pago (confirmar); `false` = grava pendente. */
   pagar: z.boolean(),
+  /** O valor desta competência, quando difere do molde (conta variável). */
+  amount_cents: z.number().int().min(1).max(1_000_000_000).optional(),
 });
 
 export async function POST(req: NextRequest): Promise<Response> {
@@ -56,13 +63,13 @@ export async function POST(req: NextRequest): Promise<Response> {
   if (!lido.success) {
     return fail("validation_failed", lido.error.issues[0]?.message ?? "corpo inválido", 422, { requestId });
   }
-  const { recurring_entry_id, entry_date, pagar } = lido.data;
+  const { recurring_entry_id, entry_date, pagar, amount_cents: valorInformado } = lido.data;
 
   const supabase = await createClient();
   const { data: molde } = await supabase
     .from("recurring_entries")
     .select(
-      "id, account_id, account_plan_id, contact_id, direction, amount_cents, currency, name, day_of_month, starts_on, is_active",
+      "id, account_id, account_plan_id, contact_id, direction, amount_cents, currency, name, day_of_month, starts_on, is_active, is_variable",
     )
     .eq("id", recurring_entry_id)
     .eq("organization_id", authz.org.orgId)
@@ -79,6 +86,10 @@ export async function POST(req: NextRequest): Promise<Response> {
   }
 
   const agora = new Date().toISOString();
+  const valor = valorInformado ?? (molde.amount_cents as number);
+  // Estimativa só enquanto pendente e sem valor informado: pago é dinheiro que
+  // passou, e o valor que a pessoa digitou é o real.
+  const estimativa = !pagar && valorInformado === undefined && molde.is_variable === true;
   const { data: criada, error } = await supabase
     .from("financial_entries")
     .insert({
@@ -87,7 +98,8 @@ export async function POST(req: NextRequest): Promise<Response> {
       account_plan_id: molde.account_plan_id,
       contact_id: molde.contact_id ?? null,
       direction: molde.direction,
-      amount_cents: molde.amount_cents,
+      amount_cents: valor,
+      amount_is_estimate: estimativa,
       currency: molde.currency,
       description: molde.name,
       entry_date: competencia,
@@ -110,7 +122,7 @@ export async function POST(req: NextRequest): Promise<Response> {
         origem: "previsto",
         recurring_entry_id: molde.id,
         direction: molde.direction,
-        amount_cents: molde.amount_cents,
+        amount_cents: valor,
         status: criada.status,
       },
     });
@@ -140,7 +152,13 @@ export async function POST(req: NextRequest): Promise<Response> {
 
   const { error: erroPagar } = await supabase
     .from("financial_entries")
-    .update({ status: "paid", paid_at: agora, updated_at: agora })
+    .update({
+      status: "paid",
+      paid_at: agora,
+      updated_at: agora,
+      amount_is_estimate: false,
+      ...(valorInformado !== undefined ? { amount_cents: valorInformado } : {}),
+    })
     .eq("id", existente.id);
   if (erroPagar) return fail("internal_error", erroPagar.message, 500, { requestId });
 
@@ -149,7 +167,11 @@ export async function POST(req: NextRequest): Promise<Response> {
     resourceType: "financial_entry",
     resourceId: existente.id,
     requestId,
-    metadata: { origem: "previsto", amount_cents: existente.amount_cents, direction: existente.direction },
+    metadata: {
+      origem: "previsto",
+      amount_cents: valorInformado ?? existente.amount_cents,
+      direction: existente.direction,
+    },
   });
   return ok({ id: existente.id, status: "paid", criado: false }, { requestId });
 }

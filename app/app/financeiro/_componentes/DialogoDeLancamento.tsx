@@ -9,6 +9,12 @@
  * cai — esta só aparece quando há mais de uma, porque escolher entre uma opção
  * não é escolha.
  *
+ * ⚠️ VALOR VARIÁVEL (9004, fork Konnexo). Anúncio e comissão só têm número no
+ * fim do mês. "Valor variável" grava o valor como ESTIMATIVA: o lançamento
+ * nasce em aberto (nunca pago — estimativa paga não existe) e o ✓ do Caixa
+ * pergunta quanto foi antes de confirmar. Com "Todo mês", vale para cada mês.
+ * A calculadora de percentual só preenche o campo de valor; não grava nada.
+ *
  * ⚠️ PAGO NÃO MUDA DE VALOR, DATA NEM TIPO. Na correção de um lançamento pago
  * esses três campos ficam travados, com a frase do porquê. O banco recusaria
  * (`fn_lancamento_pago_e_imutavel`); deixar a pessoa preencher para ouvir "não"
@@ -106,6 +112,10 @@ export function DialogoDeLancamento({
   const [data, setData] = useState(inicial.entry_date);
   const [situacao, setSituacao] = useState(inicial.status);
   const [repetir, setRepetir] = useState<"unico" | "mensal">("unico");
+  const [variavel, setVariavel] = useState(false);
+  const [calculando, setCalculando] = useState(false);
+  const [percentual, setPercentual] = useState("");
+  const [base, setBase] = useState("");
   const [contato, setContato] = useState<ContatoDoCaixa | null>(inicial.contato);
   // O diálogo nasce a cada abertura (quem chama o desmonta ao fechar), então o
   // estado inicial É o rascunho — não há o que ressincronizar depois.
@@ -119,6 +129,12 @@ export function DialogoDeLancamento({
     (c) => c.direction === direcao && (c.is_active || c.id === inicial.account_plan_id),
   );
   const cents = parseReaisToCents(valor);
+  const baseCents = parseReaisToCents(base);
+  const pct = Number(percentual.replace(",", "."));
+  const comissaoCents =
+    baseCents !== null && baseCents > 0 && Number.isFinite(pct) && pct > 0 && pct <= 100
+      ? Math.round((baseCents * pct) / 100)
+      : null;
   const semConta = !editando && contas.length === 0;
   const pode =
     descricao.trim().length > 0 && cents !== null && cents > 0 && /^\d{4}-\d{2}-\d{2}$/.test(data) && !semConta;
@@ -148,7 +164,8 @@ export function DialogoDeLancamento({
         amount_cents: cents,
         description: descricao.trim(),
         entry_date: data,
-        status: situacao,
+        status: variavel ? "pending" : situacao,
+        valor_variavel: variavel,
         contact_id: contato?.id ?? null,
         lead_id: inicial.lead_id ?? null,
         repetir,
@@ -225,7 +242,7 @@ export function DialogoDeLancamento({
           </Campo>
 
           <div className="grid grid-cols-2 gap-3">
-            <Campo rotulo={`${t("Valor")} (${moeda})`}>
+            <Campo rotulo={`${variavel ? t("Valor estimado") : t("Valor")} (${moeda})`}>
               <input
                 value={valor}
                 inputMode="decimal"
@@ -265,18 +282,102 @@ export function DialogoDeLancamento({
             </Campo>
           </div>
 
+          {!pagoTravado ? (
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                className="self-start text-xs text-accent hover:underline"
+                data-testid="abrir-calculadora"
+                onClick={() => setCalculando((v) => !v)}
+              >
+                {calculando ? t("Fechar a calculadora") : t("Calcular por percentual (comissão)")}
+              </button>
+              {calculando ? (
+                <div
+                  className="flex flex-col gap-2 rounded-md border border-border bg-surface-elevated p-3"
+                  data-testid="calculadora-comissao"
+                >
+                  <div className="grid grid-cols-2 gap-3">
+                    <Campo rotulo={t("Percentual (%)")}>
+                      <input
+                        value={percentual}
+                        inputMode="decimal"
+                        placeholder="15"
+                        data-testid="comissao-percentual"
+                        onChange={(e) => setPercentual(e.target.value)}
+                        className="rounded-md border border-border bg-surface p-2 text-sm text-text tabular-nums"
+                      />
+                    </Campo>
+                    <Campo rotulo={`${t("Sobre o valor de")} (${moeda})`}>
+                      <input
+                        value={base}
+                        inputMode="decimal"
+                        placeholder="0,00"
+                        data-testid="comissao-base"
+                        onChange={(e) => setBase(e.target.value)}
+                        className="rounded-md border border-border bg-surface p-2 text-sm text-text tabular-nums"
+                      />
+                    </Campo>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                    <span className="text-text-muted">
+                      {comissaoCents !== null
+                        ? `${percentual}% ${t("de")} ${formatCents(baseCents ?? 0, moeda)} = ${formatCents(comissaoCents, moeda)}`
+                        : t("Digite o percentual e o valor do projeto.")}
+                    </span>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      disabled={comissaoCents === null}
+                      data-testid="usar-comissao"
+                      onClick={() => {
+                        if (comissaoCents === null) return;
+                        setValor(centsParaCampo(comissaoCents));
+                        if (!descricao.trim()) setDescricao(`${t("Comissão")} ${percentual}%`);
+                        setCalculando(false);
+                      }}
+                    >
+                      {t("Usar este valor")}
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
           {!editando ? (
             <>
-              <Campo rotulo={t("Situação")}>
+              <Campo rotulo={t("Tipo de valor")}>
                 <Alternador
-                  valor={situacao}
+                  valor={variavel ? "variavel" : "fixo"}
                   opcoes={[
-                    { valor: "paid", rotulo: rotuloPago, testId: "lancamento-pago" },
-                    { valor: "pending", rotulo: rotuloPendente, testId: "lancamento-pendente" },
+                    { valor: "fixo", rotulo: t("Valor certo"), testId: "lancamento-valor-fixo" },
+                    { valor: "variavel", rotulo: t("Valor variável"), testId: "lancamento-valor-variavel" },
                   ]}
-                  onMudar={(v) => setSituacao(v as "paid" | "pending")}
+                  onMudar={(v) => setVariavel(v === "variavel")}
                 />
+                {variavel ? (
+                  <span className="text-xs text-text-muted" data-testid="explicacao-variavel">
+                    {t(
+                      "Fica em aberto com este valor estimado. Quando você pagar (ou no fim do mês), confirma no ✓ e digita quanto foi de verdade.",
+                    )}
+                  </span>
+                ) : null}
               </Campo>
+
+              {!variavel ? (
+                <Campo rotulo={t("Situação")}>
+                  <Alternador
+                    valor={situacao}
+                    opcoes={[
+                      { valor: "paid", rotulo: rotuloPago, testId: "lancamento-pago" },
+                      { valor: "pending", rotulo: rotuloPendente, testId: "lancamento-pendente" },
+                    ]}
+                    onMudar={(v) => setSituacao(v as "paid" | "pending")}
+                  />
+                </Campo>
+              ) : null}
 
               <Campo rotulo={t("Repetição")}>
                 <Alternador
@@ -291,7 +392,9 @@ export function DialogoDeLancamento({
                   <span className="text-xs text-text-muted">
                     {t("Repete todo dia")} {Number(data.slice(8, 10)) || "—"}
                     {". "}
-                    {t("Cada mês nasce pendente, para você confirmar quando o dinheiro passar.")}
+                    {variavel
+                      ? t("Cada mês nasce em aberto com a estimativa; ao confirmar, você digita quanto foi naquele mês.")
+                      : t("Cada mês nasce pendente, para você confirmar quando o dinheiro passar.")}
                   </span>
                 ) : null}
               </Campo>

@@ -43,15 +43,8 @@ import {
 import { cn } from "@/lib/utils";
 
 import { CartoesDoMes } from "./CartoesDoMes";
-import {
-  dataCurta,
-  nomeDoMes,
-  useCaixa,
-  useConfirmarLancamento,
-  useLancarPrevisto,
-  useRemoverLancamento,
-  type ContatoDoCaixa,
-} from "./dados";
+import { useConfirmarLinha } from "./ConfirmarValor";
+import { dataCurta, nomeDoMes, useCaixa, useRemoverLancamento, type ContatoDoCaixa } from "./dados";
 import { DialogoDeLancamento, rascunhoVazio, type RascunhoDeLancamento } from "./DialogoDeLancamento";
 import { DespesasPorCategoria, FluxoMensal } from "./Graficos";
 import { SeletorDeMes } from "./SeletorDeMes";
@@ -70,9 +63,9 @@ export function Caixa({ mesInicial, mesAtual }: { mesInicial: string; mesAtual: 
   const [rascunho, setRascunho] = useState<RascunhoDeLancamento | null>(null);
 
   const caixa = useCaixa(mes);
-  const confirmar = useConfirmarLancamento();
   const remover = useRemoverLancamento();
-  const lancarPrevisto = useLancarPrevisto();
+  // Confirmar mora no hook: linha de valor estimado pergunta "quanto foi?" antes.
+  const { confirmarLinha, ocupado: confirmando, dialogo: dialogoDoValor, lancarPrevisto } = useConfirmarLinha();
 
   const dados = caixa.data;
   const rotuloDoPeriodo = mes === "todos" ? t("todos os meses") : nomeDoMes(mes, tag);
@@ -118,15 +111,6 @@ export function Caixa({ mesInicial, mesAtual }: { mesInicial: string; mesAtual: 
     return alvo.includes(termo);
   });
   const totalDoFiltro = resumoDoCaixa(visiveis);
-
-  function confirmarLinha(l: LinhaDoCaixa) {
-    if (l.id) {
-      confirmar.mutate(l.id);
-      return;
-    }
-    if (!l.recurring_entry_id) return;
-    lancarPrevisto.mutate({ recurring_entry_id: l.recurring_entry_id, entry_date: l.entry_date, pagar: true });
-  }
 
   /** A linha prevista nasce pendente primeiro; o diálogo corrige a linha gravada. */
   async function corrigirPrevisto(l: LinhaDoCaixa) {
@@ -344,7 +328,7 @@ export function Caixa({ mesInicial, mesAtual }: { mesInicial: string; mesAtual: 
                                 entrada ? "text-success" : "text-text",
                               )}
                             >
-                              {entrada ? "+ " : "− "}
+                              {l.amount_is_estimate && l.status === "pending" ? "≈ " : entrada ? "+ " : "− "}
                               {formatCents(l.amount_cents, l.currency)}
                             </td>
                             <td className="py-2 text-right whitespace-nowrap">
@@ -352,7 +336,7 @@ export function Caixa({ mesInicial, mesAtual }: { mesInicial: string; mesAtual: 
                                 <IconeDeAcao
                                   rotulo={entrada ? t("Confirmar recebimento") : t("Confirmar pagamento")}
                                   onClick={() => confirmarLinha(l)}
-                                  desabilitado={confirmar.isPending || lancarPrevisto.isPending}
+                                  desabilitado={confirmando}
                                   testId="confirmar-lancamento"
                                 >
                                   <Check size={16} />
@@ -414,6 +398,7 @@ export function Caixa({ mesInicial, mesAtual }: { mesInicial: string; mesAtual: 
             </section>
           ) : null}
 
+          {dialogoDoValor}
           {rascunho ? (
             <DialogoDeLancamento
               aberto
@@ -433,7 +418,12 @@ export function Caixa({ mesInicial, mesAtual }: { mesInicial: string; mesAtual: 
 export function Situacao({ linha, hoje }: { linha: LinhaDoCaixa; hoje: string }) {
   const t = useT();
   if (linha.id === null) {
-    return <span className="text-xs text-text-muted">{t("Previsto")}</span>;
+    return (
+      <span className="text-xs text-text-muted">
+        {t("Previsto")}
+        <ValorEstimado linha={linha} />
+      </span>
+    );
   }
   if (linha.status === "paid") {
     return (
@@ -452,6 +442,18 @@ export function Situacao({ linha, hoje }: { linha: LinhaDoCaixa; hoje: string })
     <span className="inline-flex items-center gap-1 text-xs text-warning">
       <span className="size-1.5 rounded-full bg-warning" />
       {linha.direction === "in" ? t("A receber") : t("A pagar")}
+      <ValorEstimado linha={linha} />
+    </span>
+  );
+}
+
+/** "valor a confirmar" ao lado da situação da conta variável (9004). */
+function ValorEstimado({ linha }: { linha: LinhaDoCaixa }) {
+  const t = useT();
+  if (!linha.amount_is_estimate || linha.status !== "pending") return null;
+  return (
+    <span className="text-text-muted" data-testid="valor-estimado">
+      · {t("valor a confirmar")}
     </span>
   );
 }

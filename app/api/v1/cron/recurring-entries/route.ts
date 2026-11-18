@@ -46,7 +46,7 @@ async function handle(req: NextRequest): Promise<Response> {
   const { data: moldes, error } = await admin
     .from("recurring_entries")
     .select(
-      "id, organization_id, account_id, account_plan_id, contact_id, direction, amount_cents, currency, name, day_of_month, starts_on",
+      "id, organization_id, account_id, account_plan_id, contact_id, direction, amount_cents, currency, name, day_of_month, starts_on, is_variable",
     )
     .eq("is_active", true);
 
@@ -85,6 +85,9 @@ async function handle(req: NextRequest): Promise<Response> {
       status: "pending",
       origin: "recurring",
       recurring_entry_id: molde.id,
+      // Molde variável (9004): o valor do molde é a estimativa, e a linha nasce
+      // marcada para o confirmar pedir o valor real.
+      amount_is_estimate: molde.is_variable === true,
     });
 
     if (!erroInsert) {

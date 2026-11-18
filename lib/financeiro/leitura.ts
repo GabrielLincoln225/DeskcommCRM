@@ -16,7 +16,7 @@ const PAGINA = 1000;
 const TETO_DE_LINHAS = 20_000;
 
 export const COLUNAS_DO_CAIXA =
-  "id, direction, amount_cents, currency, description, entry_date, status, origin, account_plan_id, contact_id, lead_id, recurring_entry_id";
+  "id, direction, amount_cents, currency, description, entry_date, status, origin, account_plan_id, contact_id, lead_id, recurring_entry_id, amount_is_estimate";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 

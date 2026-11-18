@@ -8582,6 +8582,7 @@ export type Database = {
           account_id: string;
           account_plan_id: string | null;
           amount_cents: number;
+          amount_is_estimate: boolean;
           created_at: string;
           created_by_user_id: string | null;
           currency: string;
@@ -8603,6 +8604,7 @@ export type Database = {
           account_id: string;
           account_plan_id?: string | null;
           amount_cents: number;
+          amount_is_estimate?: boolean;
           created_at?: string;
           created_by_user_id?: string | null;
           currency?: string;
@@ -8623,6 +8625,7 @@ export type Database = {
           account_id?: string;
           account_plan_id?: string | null;
           amount_cents?: number;
+          amount_is_estimate?: boolean;
           created_at?: string;
           created_by_user_id?: string | null;
           currency?: string;
@@ -12936,6 +12939,7 @@ export type Database = {
           direction: string;
           id: string;
           is_active: boolean;
+          is_variable: boolean;
           name: string;
           organization_id: string;
           updated_at: string;
@@ -12952,6 +12956,7 @@ export type Database = {
           direction: string;
           id?: string;
           is_active?: boolean;
+          is_variable?: boolean;
           name: string;
           organization_id: string;
           updated_at?: string;
@@ -12967,6 +12972,7 @@ export type Database = {
           direction?: string;
           id?: string;
           is_active?: boolean;
+          is_variable?: boolean;
           name?: string;
           organization_id?: string;
           updated_at?: string;
